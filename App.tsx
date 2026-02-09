@@ -7,7 +7,8 @@ import { ActivityIndicator, View } from 'react-native';
 
 // Importação das Telas
 import Login from './src/screens/Login';
-import Home from './src/screens/Home'; // <--- Importando a Home Real (que tem o Carlos)
+import Home from './src/screens/Home';
+import BarberProfile from './src/screens/BarberProfile'; // <--- Nova Importação
 
 const Stack = createNativeStackNavigator();
 
@@ -16,7 +17,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Esse "espião" fica ouvindo se o usuário logou ou saiu
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -36,10 +36,14 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          // Se tiver usuário, mostra a Home Real (que puxa os dados do Firebase)
-          <Stack.Screen name="Home" component={Home} />
+          // Fluxo de quem está Logado
+          <>
+            <Stack.Screen name="Home" component={Home} />
+            <Stack.Screen name="BarberProfile" component={BarberProfile} /> 
+            {/* ^^^ A nova tela foi registrada aqui! */}
+          </>
         ) : (
-          // Se NÃO tiver usuário, mostra o Login
+          // Fluxo de Login
           <Stack.Screen name="Login" component={Login} />
         )}
       </Stack.Navigator>

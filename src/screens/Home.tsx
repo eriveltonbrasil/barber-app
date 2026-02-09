@@ -7,12 +7,10 @@ export default function Home({ navigation }: any) {
   const [barbers, setBarbers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Função para deslogar
   function handleLogout() {
     auth.signOut();
   }
 
-  // Função que busca os dados no Firebase
   useEffect(() => {
     async function fetchBarbers() {
       try {
@@ -28,7 +26,6 @@ export default function Home({ navigation }: any) {
         setLoading(false);
       }
     }
-
     fetchBarbers();
   }, []);
 
@@ -53,7 +50,11 @@ export default function Home({ navigation }: any) {
           data={barbers}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <TouchableOpacity className="bg-zinc-800 p-4 rounded-2xl mb-4 flex-row items-center border border-zinc-700">
+            <TouchableOpacity 
+              className="bg-zinc-800 p-4 rounded-2xl mb-4 flex-row items-center border border-zinc-700"
+              // AQUI ESTÁ A MÁGICA: Ao clicar, vai para BarberProfile levando os dados do 'item' (o barbeiro)
+              onPress={() => navigation.navigate('BarberProfile', { barber: item })}
+            >
               <Image 
                 source={{ uri: item.foto }} 
                 className="w-16 h-16 rounded-full mr-4" 
