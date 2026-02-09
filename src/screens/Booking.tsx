@@ -2,27 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, Alert } from 'react-native';
 
 export default function Booking({ route, navigation }: any) {
-  // Recebe os dados da tela anterior
   const { barber, service } = route.params;
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [days, setDays] = useState<any[]>([]);
 
-  // Horários disponíveis (Estáticos por enquanto)
+  // Horários disponíveis
   const times = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
 
-  // Função que gera os próximos 14 dias automaticamente
   useEffect(() => {
     const nextDays = [];
+    const weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']; // Nomes fixos em PT-BR
+
     for (let i = 0; i < 14; i++) {
       const date = new Date();
+      // Adiciona 'i' dias na data de hoje
       date.setDate(date.getDate() + i);
+
+      // CORREÇÃO: Pega o dia da semana MANUALMENTE usando o array acima
+      // O getDay() retorna 0 para Domingo, 1 para Segunda, etc.
+      const dayIndex = date.getDay(); 
+      const weekDay = weekDays[dayIndex];
       
-      // Formata o dia da semana e o número (Ex: "Seg", "12")
-      const weekDay = date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '').toUpperCase();
       const dayNumber = date.getDate();
-      const fullDate = date.toISOString().split('T')[0]; // Formato YYYY-MM-DD para salvar no banco
+      const fullDate = date.toISOString().split('T')[0];
 
       nextDays.push({ weekDay, dayNumber, fullDate });
     }
@@ -34,8 +38,8 @@ export default function Booking({ route, navigation }: any) {
       Alert.alert("Atenção", "Escolha um dia e um horário!");
       return;
     }
-    Alert.alert("Agendamento Confirmado!", `Barbeiro: ${barber.nome}\nServiço: ${service.nome}\nDia: ${selectedDate}\nHorário: ${selectedTime}`);
-    // Na próxima etapa, salvaremos isso no Firebase!
+    Alert.alert("Sucesso", "Estamos salvando seu agendamento...");
+    // Aqui entra a lógica de salvar no Firebase no próximo passo
   }
 
   return (
@@ -73,7 +77,6 @@ export default function Booking({ route, navigation }: any) {
 
       <Text className="text-white text-xl font-bold mt-6 mb-4">Escolha o Horário</Text>
       
-      {/* Grade de Horários */}
       <View className="flex-row flex-wrap justify-between">
         {times.map((time) => {
           const isSelected = selectedTime === time;
@@ -89,7 +92,6 @@ export default function Booking({ route, navigation }: any) {
         })}
       </View>
 
-      {/* Botão Finalizar */}
       <TouchableOpacity 
         onPress={handleFinishBooking}
         className={`mt-auto mb-6 p-4 rounded-xl items-center ${selectedDate && selectedTime ? 'bg-orange-500' : 'bg-zinc-700 opacity-50'}`}
