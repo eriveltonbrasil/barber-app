@@ -8,7 +8,8 @@ import { ActivityIndicator, View } from 'react-native';
 // Importação das Telas
 import Login from './src/screens/Login';
 import Home from './src/screens/Home';
-import BarberProfile from './src/screens/BarberProfile'; // <--- Nova Importação
+import BarberProfile from './src/screens/BarberProfile';
+import Booking from './src/screens/Booking'; // <--- Nova Importação da Tela de Agendamento
 
 const Stack = createNativeStackNavigator();
 
@@ -39,8 +40,9 @@ export default function App() {
           // Fluxo de quem está Logado
           <>
             <Stack.Screen name="Home" component={Home} />
-            <Stack.Screen name="BarberProfile" component={BarberProfile} /> 
-            {/* ^^^ A nova tela foi registrada aqui! */}
+            <Stack.Screen name="BarberProfile" component={BarberProfile} />
+            <Stack.Screen name="Booking" component={Booking} /> 
+            {/* ^^^ A tela de Calendário foi registrada aqui! */}
           </>
         ) : (
           // Fluxo de Login

@@ -35,8 +35,12 @@ export default function BarberProfile({ route, navigation }: any) {
       Alert.alert("Ops!", "Selecione um serviço para continuar.");
       return;
     }
-    // Por enquanto, apenas avisa. Na próxima etapa vamos abrir o calendário!
-    Alert.alert("Sucesso", `Você escolheu: ${selectedService.nome}. Vamos para o calendário!`);
+    
+    // NAVEGAÇÃO REAL: Vai para a tela de Booking levando os dados
+    navigation.navigate('Booking', { 
+      barber: barber, 
+      service: selectedService 
+    });
   }
 
   return (
