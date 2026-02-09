@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Alert, ActivityIndicator } from 'react-native';
+import { auth, db } from '../config/firebase'; // <--- Importante
+import { collection, addDoc } from 'firebase/firestore'; // <--- Importante
 
 export default function Booking({ route, navigation }: any) {
   const { barber, service } = route.params;
@@ -7,24 +9,20 @@ export default function Booking({ route, navigation }: any) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [days, setDays] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false); // <--- Para travar o botão enquanto salva
 
-  // Horários disponíveis
   const times = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
 
   useEffect(() => {
     const nextDays = [];
-    const weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']; // Nomes fixos em PT-BR
+    const weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 
     for (let i = 0; i < 14; i++) {
       const date = new Date();
-      // Adiciona 'i' dias na data de hoje
       date.setDate(date.getDate() + i);
 
-      // CORREÇÃO: Pega o dia da semana MANUALMENTE usando o array acima
-      // O getDay() retorna 0 para Domingo, 1 para Segunda, etc.
-      const dayIndex = date.getDay(); 
+      const dayIndex = date.getDay();
       const weekDay = weekDays[dayIndex];
-      
       const dayNumber = date.getDate();
       const fullDate = date.toISOString().split('T')[0];
 
@@ -33,13 +31,47 @@ export default function Booking({ route, navigation }: any) {
     setDays(nextDays);
   }, []);
 
-  function handleFinishBooking() {
+  // --- FUNÇÃO QUE SALVA NO FIREBASE ---
+  async function handleFinishBooking() {
     if (!selectedDate || !selectedTime) {
       Alert.alert("Atenção", "Escolha um dia e um horário!");
       return;
     }
-    Alert.alert("Sucesso", "Estamos salvando seu agendamento...");
-    // Aqui entra a lógica de salvar no Firebase no próximo passo
+
+    // Verifica se o usuário está logado
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert("Erro", "Você precisa estar logado.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Cria o documento na coleção "agendamentos"
+      await addDoc(collection(db, "agendamentos"), {
+        clienteId: user.uid,
+        clienteEmail: user.email,
+        barbeiroNome: barber.nome,
+        barbeiroId: barber.id,
+        servicoNome: service.nome,
+        servicoPreco: service.preco,
+        data: selectedDate,
+        horario: selectedTime,
+        status: "agendado", // Pode ser: agendado, cancelado, concluido
+        criadoEm: new Date()
+      });
+
+      Alert.alert("Sucesso! 🎉", "Seu horário foi agendado.", [
+        { text: "OK", onPress: () => navigation.navigate("Home") }
+      ]);
+
+    } catch (error) {
+      console.log("Erro ao salvar:", error);
+      Alert.alert("Erro", "Não foi possível agendar. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -53,7 +85,6 @@ export default function Booking({ route, navigation }: any) {
 
       <Text className="text-white text-xl font-bold mb-4">Escolha a Data</Text>
       
-      {/* Lista Horizontal de Dias */}
       <View className="h-24">
         <FlatList
           horizontal
@@ -94,10 +125,14 @@ export default function Booking({ route, navigation }: any) {
 
       <TouchableOpacity 
         onPress={handleFinishBooking}
+        disabled={loading || !selectedDate || !selectedTime}
         className={`mt-auto mb-6 p-4 rounded-xl items-center ${selectedDate && selectedTime ? 'bg-orange-500' : 'bg-zinc-700 opacity-50'}`}
-        disabled={!selectedDate || !selectedTime}
       >
-        <Text className="text-white font-bold text-lg">Confirmar Agendamento ✅</Text>
+        {loading ? (
+          <ActivityIndicator color="#FFF" />
+        ) : (
+          <Text className="text-white font-bold text-lg">Confirmar Agendamento ✅</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
