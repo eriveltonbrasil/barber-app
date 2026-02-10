@@ -31,17 +31,27 @@ export default function Home({ navigation }: any) {
 
   return (
     <View className="flex-1 bg-zinc-900 px-6 pt-12">
-      <View className="flex-row justify-between items-center mb-8">
+      {/* Cabeçalho */}
+      <View className="flex-row justify-between items-start mb-6">
         <View>
           <Text className="text-zinc-400 text-lg">Olá, Bem-vindo</Text>
-          <Text className="text-white text-2xl font-bold">BarberQ</Text>
+          <Text className="text-white text-2xl font-bold mb-2">BarberQ</Text>
+          
+          {/* BOTÃO NOVO AQUI EMBAIXO 👇 */}
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('MyAppointments')}
+            className="bg-orange-500 px-4 py-2 rounded-lg self-start mt-2"
+          >
+            <Text className="text-white font-bold text-sm">📅 Meus Agendamentos</Text>
+          </TouchableOpacity>
         </View>
+
         <TouchableOpacity onPress={handleLogout} className="bg-zinc-800 p-2 rounded-lg">
           <Text className="text-red-400 font-bold">Sair</Text>
         </TouchableOpacity>
       </View>
 
-      <Text className="text-white text-xl font-bold mb-4">Nossos Profissionais</Text>
+      <Text className="text-white text-xl font-bold mb-4 mt-4">Nossos Profissionais</Text>
 
       {loading ? (
         <ActivityIndicator size="large" color="#f97316" />
@@ -52,7 +62,6 @@ export default function Home({ navigation }: any) {
           renderItem={({ item }) => (
             <TouchableOpacity 
               className="bg-zinc-800 p-4 rounded-2xl mb-4 flex-row items-center border border-zinc-700"
-              // AQUI ESTÁ A MÁGICA: Ao clicar, vai para BarberProfile levando os dados do 'item' (o barbeiro)
               onPress={() => navigation.navigate('BarberProfile', { barber: item })}
             >
               <Image 

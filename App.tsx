@@ -9,7 +9,8 @@ import { ActivityIndicator, View } from 'react-native';
 import Login from './src/screens/Login';
 import Home from './src/screens/Home';
 import BarberProfile from './src/screens/BarberProfile';
-import Booking from './src/screens/Booking'; // <--- Nova Importação da Tela de Agendamento
+import Booking from './src/screens/Booking';
+import MyAppointments from './src/screens/MyAppointments'; // <--- Nova Importação
 
 const Stack = createNativeStackNavigator();
 
@@ -37,15 +38,14 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          // Fluxo de quem está Logado
           <>
             <Stack.Screen name="Home" component={Home} />
             <Stack.Screen name="BarberProfile" component={BarberProfile} />
-            <Stack.Screen name="Booking" component={Booking} /> 
-            {/* ^^^ A tela de Calendário foi registrada aqui! */}
+            <Stack.Screen name="Booking" component={Booking} />
+            <Stack.Screen name="MyAppointments" component={MyAppointments} /> 
+            {/* ^^^ Tela Registrada! */}
           </>
         ) : (
-          // Fluxo de Login
           <Stack.Screen name="Login" component={Login} />
         )}
       </Stack.Navigator>
