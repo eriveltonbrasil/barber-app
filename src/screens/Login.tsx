@@ -46,7 +46,7 @@ export default function Login({ navigation }: any) {
   return (
     <View className="flex-1 bg-zinc-900 justify-center px-6">
       <Text className="text-white text-4xl font-bold text-center mb-2">
-        Barber<Text className="text-orange-500">Q</Text>
+        Elite<Text className="text-orange-500">Barber</Text>
       </Text>
       <Text className="text-zinc-400 text-center mb-10 text-lg">
         Seu estilo, no seu tempo.

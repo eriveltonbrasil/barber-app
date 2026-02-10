@@ -35,7 +35,7 @@ export default function Home({ navigation }: any) {
       <View className="flex-row justify-between items-start mb-6">
         <View>
           <Text className="text-zinc-400 text-lg">Olá, Bem-vindo</Text>
-          <Text className="text-white text-2xl font-bold mb-2">BarberQ</Text>
+          <Text className="text-white text-2xl font-bold mb-2">EliteBarber</Text>
           
           {/* BOTÃO NOVO AQUI EMBAIXO 👇 */}
           <TouchableOpacity 
