@@ -43,6 +43,11 @@ export default function BarberProfile({ route, navigation }: any) {
     });
   }
 
+  // Função auxiliar para formatar preço (35 -> 35,00)
+  const formatPrice = (value: any) => {
+    return Number(value).toFixed(2).replace('.', ',');
+  };
+
   return (
     <View className="flex-1 bg-zinc-900">
       <View className="items-center pt-8 pb-6 bg-zinc-800 rounded-b-3xl shadow-lg">
@@ -75,9 +80,12 @@ export default function BarberProfile({ route, navigation }: any) {
                   <Text className={`text-lg font-bold ${isSelected ? 'text-orange-500' : 'text-white'}`}>
                     {item.nome}
                   </Text>
-                  <Text className="text-zinc-400 text-sm">🕒 {item.duracao}</Text>
+                  {/* AQUI ESTÁ A CORREÇÃO DO "min" 👇 */}
+                  <Text className="text-zinc-400 text-sm">🕒 {item.duracao} min</Text>
                 </View>
-                <Text className="text-orange-500 text-lg font-bold">R$ {item.preco},00</Text>
+                
+                {/* Formatamos o preço bonitinho 👇 */}
+                <Text className="text-orange-500 text-lg font-bold">R$ {formatPrice(item.preco)}</Text>
               </TouchableOpacity>
             )
           }}
