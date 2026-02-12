@@ -15,6 +15,8 @@ export default function AdminPanel({ navigation }: any) {
       <Text className="text-zinc-400 mb-6">Área exclusiva para gerenciamento do EliteBarber.</Text>
 
       {/* Botões de Ação */}
+      
+      {/* 1. Cadastrar Barbeiro */}
       <TouchableOpacity 
         className="bg-zinc-800 p-5 rounded-xl mb-4 border border-zinc-700"
         onPress={() => navigation.navigate('AddBarber')}
@@ -23,6 +25,16 @@ export default function AdminPanel({ navigation }: any) {
         <Text className="text-zinc-400 text-sm mt-1">Adicione profissionais à sua equipe.</Text>
       </TouchableOpacity>
 
+      {/* 2. Gerenciar (Excluir) Barbeiros - NOVO! */}
+      <TouchableOpacity 
+        className="bg-zinc-800 p-5 rounded-xl mb-4 border border-zinc-700"
+        onPress={() => navigation.navigate('ManageBarbers')}
+      >
+        <Text className="text-white font-bold text-lg">📂 Gerenciar Equipe</Text>
+        <Text className="text-zinc-400 text-sm mt-1">Ver lista e excluir profissionais.</Text>
+      </TouchableOpacity>
+
+      {/* 3. Cadastrar Serviço */}
       <TouchableOpacity 
         className="bg-zinc-800 p-5 rounded-xl mb-4 border border-zinc-700"
         onPress={() => navigation.navigate('AddService')}
