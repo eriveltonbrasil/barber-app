@@ -1,3 +1,4 @@
+import AddService from './src/screens/AddService';
 import AddBarber from './src/screens/AddBarber';
 import AdminPanel from './src/screens/AdminPanel';
 import React, { useState, useEffect } from 'react';
@@ -44,6 +45,7 @@ export default function App() {
             <Stack.Screen name="Home" component={Home} />
             <Stack.Screen name="AdminPanel" component={AdminPanel} />
             <Stack.Screen name="AddBarber" component={AddBarber} />
+            <Stack.Screen name="AddService" component={AddService} />
             <Stack.Screen name="BarberProfile" component={BarberProfile} />
             <Stack.Screen name="Booking" component={Booking} />
             <Stack.Screen name="MyAppointments" component={MyAppointments} /> 

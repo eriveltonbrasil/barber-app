@@ -25,7 +25,7 @@ export default function AdminPanel({ navigation }: any) {
 
       <TouchableOpacity 
         className="bg-zinc-800 p-5 rounded-xl mb-4 border border-zinc-700"
-        onPress={() => console.log('Ir para Cadastro de Serviço')}
+        onPress={() => navigation.navigate('AddService')}
       >
         <Text className="text-white font-bold text-lg">✂️ Cadastrar Novo Serviço</Text>
         <Text className="text-zinc-400 text-sm mt-1">Crie novos tipos de cortes e preços.</Text>
