@@ -1,3 +1,5 @@
+import AddBarber from './src/screens/AddBarber';
+import AdminPanel from './src/screens/AdminPanel';
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -40,6 +42,8 @@ export default function App() {
         {user ? (
           <>
             <Stack.Screen name="Home" component={Home} />
+            <Stack.Screen name="AdminPanel" component={AdminPanel} />
+            <Stack.Screen name="AddBarber" component={AddBarber} />
             <Stack.Screen name="BarberProfile" component={BarberProfile} />
             <Stack.Screen name="Booking" component={Booking} />
             <Stack.Screen name="MyAppointments" component={MyAppointments} /> 

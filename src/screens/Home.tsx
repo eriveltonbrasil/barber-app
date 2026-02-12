@@ -7,6 +7,9 @@ export default function Home({ navigation }: any) {
   const [barbers, setBarbers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // A MÁGICA DE VERIFICAÇÃO DE ADMIN AQUI 👇
+  const isAdmin = auth.currentUser?.email === 'erivelton.brasil07@gmail.com';
+
   function handleLogout() {
     auth.signOut();
   }
@@ -37,13 +40,23 @@ export default function Home({ navigation }: any) {
           <Text className="text-zinc-400 text-lg">Olá, Bem-vindo</Text>
           <Text className="text-white text-2xl font-bold mb-2">EliteBarber</Text>
           
-          {/* BOTÃO NOVO AQUI EMBAIXO 👇 */}
           <TouchableOpacity 
             onPress={() => navigation.navigate('MyAppointments')}
             className="bg-orange-500 px-4 py-2 rounded-lg self-start mt-2"
           >
             <Text className="text-white font-bold text-sm">📅 Meus Agendamentos</Text>
           </TouchableOpacity>
+
+          {/* BOTÃO ADMIN QUE SÓ APARECE PARA VOCÊ 👇 */}
+          {isAdmin && (
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('AdminPanel')}
+              className="bg-zinc-800 px-4 py-2 rounded-lg self-start mt-2 border border-orange-500/50"
+            >
+              <Text className="text-orange-400 font-bold text-sm">⚙️ Painel Admin</Text>
+            </TouchableOpacity>
+          )}
+
         </View>
 
         <TouchableOpacity onPress={handleLogout} className="bg-zinc-800 p-2 rounded-lg">
