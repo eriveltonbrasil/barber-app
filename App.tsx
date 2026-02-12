@@ -1,3 +1,4 @@
+import ManageServices from './src/screens/ManageServices';
 import ManageBarbers from './src/screens/ManageBarbers';
 import AddService from './src/screens/AddService';
 import AddBarber from './src/screens/AddBarber';
@@ -48,6 +49,7 @@ export default function App() {
             <Stack.Screen name="AddBarber" component={AddBarber} />
             <Stack.Screen name="AddService" component={AddService} />
             <Stack.Screen name="ManageBarbers" component={ManageBarbers} />
+            <Stack.Screen name="ManageServices" component={ManageServices} />
             <Stack.Screen name="BarberProfile" component={BarberProfile} />
             <Stack.Screen name="Booking" component={Booking} />
             <Stack.Screen name="MyAppointments" component={MyAppointments} /> 

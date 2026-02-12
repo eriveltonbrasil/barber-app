@@ -1,13 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { db } from '../config/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 
-export default function AddService({ navigation }: any) {
+export default function AddService({ navigation, route }: any) {
   const [nome, setNome] = useState('');
   const [preco, setPreco] = useState('');
   const [duracao, setDuracao] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Verifica se veio algum serviço para editar
+  const serviceToEdit = route.params?.serviceToEdit;
+  const isEditing = !!serviceToEdit;
+
+  useEffect(() => {
+    if (isEditing) {
+      navigation.setOptions({ title: 'Editar Serviço' });
+      setNome(serviceToEdit.nome);
+      setPreco(serviceToEdit.preco.toString());
+      setDuracao(serviceToEdit.duracao.toString());
+    }
+  }, [serviceToEdit]);
 
   async function handleSave() {
     if (nome === '' || preco === '' || duracao === '') {
@@ -18,18 +31,27 @@ export default function AddService({ navigation }: any) {
     setLoading(true);
 
     try {
-      // Salva na coleção "servicos"
-      await addDoc(collection(db, "servicos"), {
+      const dataToSave = {
         nome: nome,
-        preco: parseFloat(preco.replace(',', '.')), // Garante que salva como número (ex: 35.00)
-        duracao: parseInt(duracao), // Salva como número inteiro (ex: 30)
-      });
+        preco: parseFloat(preco.replace(',', '.')),
+        duracao: parseInt(duracao),
+      };
 
-      Alert.alert("Sucesso!", "Serviço cadastrado!");
+      if (isEditing) {
+        // MODO EDIÇÃO: Atualiza o documento existente
+        const serviceRef = doc(db, "servicos", serviceToEdit.id);
+        await updateDoc(serviceRef, dataToSave);
+        Alert.alert("Sucesso!", "Serviço atualizado com sucesso!");
+      } else {
+        // MODO CRIAÇÃO: Cria um novo
+        await addDoc(collection(db, "servicos"), dataToSave);
+        Alert.alert("Sucesso!", "Serviço cadastrado!");
+      }
+
       navigation.goBack(); 
     } catch (error) {
       console.log(error);
-      Alert.alert("Erro", "Não foi possível salvar o serviço.");
+      Alert.alert("Erro", "Não foi possível salvar.");
     } finally {
       setLoading(false);
     }
@@ -41,7 +63,9 @@ export default function AddService({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
           <Text className="text-orange-500 text-lg font-bold">← Voltar</Text>
         </TouchableOpacity>
-        <Text className="text-white text-2xl font-bold">Novo Serviço</Text>
+        <Text className="text-white text-2xl font-bold">
+          {isEditing ? 'Editar Serviço' : 'Novo Serviço'}
+        </Text>
       </View>
 
       <Text className="text-zinc-400 mb-2">Nome do Serviço</Text>
@@ -81,7 +105,9 @@ export default function AddService({ navigation }: any) {
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text className="text-white font-bold text-lg">💾 Salvar Serviço</Text>
+          <Text className="text-white font-bold text-lg">
+            {isEditing ? '💾 Atualizar Serviço' : '💾 Salvar Serviço'}
+          </Text>
         )}
       </TouchableOpacity>
     </View>
