@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { db } from '../config/firebase';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // <--- 1. Importamos a memória
 
 export default function AddBarber({ navigation, route }: any) {
   const [nome, setNome] = useState('');
@@ -31,6 +32,15 @@ export default function AddBarber({ navigation, route }: any) {
     setLoading(true);
 
     try {
+      // 2. Buscamos o ID da barbearia na memória antes de salvar
+      const shopId = await AsyncStorage.getItem('@delp_shopId');
+      
+      if (!shopId) {
+        Alert.alert("Erro", "Barbearia não identificada. Faça login novamente.");
+        setLoading(false);
+        return;
+      }
+
       const dataToSave = {
         nome: nome,
         especialidade: especialidade,
@@ -38,18 +48,19 @@ export default function AddBarber({ navigation, route }: any) {
       };
 
       if (isEditing) {
-         // Atualiza
+         // Atualiza (Na edição não precisamos mudar o shopId, mantemos o que já estava)
          const barberRef = doc(db, "barbeiros", barberToEdit.id);
          await updateDoc(barberRef, dataToSave);
          Alert.alert("Sucesso!", "Dados do barbeiro atualizados!");
       } else {
-         // Cria novo (adicionando campos extras padrão)
+         // 3. Cria novo (AGORA COM O shopId!)
          await addDoc(collection(db, "barbeiros"), {
             ...dataToSave,
+            shopId: shopId, // <--- AQUI ESTÁ A MÁGICA DO SAAS
             nota: 5.0,
             horarios: ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
          });
-         Alert.alert("Sucesso!", "Barbeiro cadastrado com sucesso.");
+         Alert.alert("Sucesso!", "Barbeiro cadastrado na unidade!");
       }
       
       navigation.goBack();

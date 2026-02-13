@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { db } from '../config/firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { useIsFocused } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // <--- Importante
 
 export default function ManageBarbers({ navigation }: any) {
   const [barbers, setBarbers] = useState<any[]>([]);
@@ -12,7 +13,18 @@ export default function ManageBarbers({ navigation }: any) {
   async function fetchBarbers() {
     setLoading(true);
     try {
-      const querySnapshot = await getDocs(collection(db, "barbeiros"));
+      // 1. Pega o ID da loja na memória
+      const shopId = await AsyncStorage.getItem('@delp_shopId');
+      
+      if (!shopId) {
+        setLoading(false);
+        return;
+      }
+
+      // 2. Filtra: Só traz barbeiros desta loja
+      const q = query(collection(db, "barbeiros"), where("shopId", "==", shopId));
+      const querySnapshot = await getDocs(q);
+      
       const lista = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -102,6 +114,11 @@ export default function ManageBarbers({ navigation }: any) {
                 </TouchableOpacity>
               </View>
             </View>
+          )}
+          ListEmptyComponent={() => (
+             <Text className="text-zinc-500 text-center mt-10">
+               Nenhum profissional cadastrado nesta unidade.
+             </Text>
           )}
         />
       )}

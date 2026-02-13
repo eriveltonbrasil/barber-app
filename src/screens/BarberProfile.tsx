@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { db } from '../config/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore'; // <--- Import SaaS
+import AsyncStorage from '@react-native-async-storage/async-storage'; // <--- Import SaaS
 
 export default function BarberProfile({ route, navigation }: any) {
   const { barber } = route.params; 
@@ -15,7 +16,19 @@ export default function BarberProfile({ route, navigation }: any) {
   useEffect(() => {
     async function fetchServices() {
       try {
-        const querySnapshot = await getDocs(collection(db, "servicos"));
+        // 1. SaaS: Busca o ID da barbearia na memória
+        const shopId = await AsyncStorage.getItem('@delp_shopId');
+
+        if (!shopId) {
+            console.log("Loja não encontrada");
+            setLoading(false);
+            return;
+        }
+
+        // 2. SaaS: Filtra apenas serviços desta loja
+        const q = query(collection(db, "servicos"), where("shopId", "==", shopId));
+        const querySnapshot = await getDocs(q);
+        
         const lista = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -36,14 +49,12 @@ export default function BarberProfile({ route, navigation }: any) {
       return;
     }
     
-    // NAVEGAÇÃO REAL: Vai para a tela de Booking levando os dados
     navigation.navigate('Booking', { 
       barber: barber, 
       service: selectedService 
     });
   }
 
-  // Função auxiliar para formatar preço (35 -> 35,00)
   const formatPrice = (value: any) => {
     return Number(value).toFixed(2).replace('.', ',');
   };
@@ -67,12 +78,11 @@ export default function BarberProfile({ route, navigation }: any) {
           keyExtractor={(item) => item.id}
           className="px-6"
           renderItem={({ item }) => {
-            // Verifica se este item é o selecionado
             const isSelected = selectedService?.id === item.id;
             
             return (
               <TouchableOpacity 
-                onPress={() => setSelectedService(item)} // Ao clicar, marca como selecionado
+                onPress={() => setSelectedService(item)}
                 className={`p-4 rounded-xl mb-3 flex-row justify-between items-center border 
                   ${isSelected ? 'bg-zinc-700 border-orange-500' : 'bg-zinc-800 border-zinc-700'}`}
               >
@@ -80,19 +90,21 @@ export default function BarberProfile({ route, navigation }: any) {
                   <Text className={`text-lg font-bold ${isSelected ? 'text-orange-500' : 'text-white'}`}>
                     {item.nome}
                   </Text>
-                  {/* AQUI ESTÁ A CORREÇÃO DO "min" 👇 */}
                   <Text className="text-zinc-400 text-sm">🕒 {item.duracao} min</Text>
                 </View>
                 
-                {/* Formatamos o preço bonitinho 👇 */}
                 <Text className="text-orange-500 text-lg font-bold">R$ {formatPrice(item.preco)}</Text>
               </TouchableOpacity>
             )
           }}
+          ListEmptyComponent={() => (
+             <Text className="text-zinc-500 text-center mt-4">
+               Nenhum serviço disponível no momento.
+             </Text>
+          )}
         />
       )}
       
-      {/* Botão Flutuante de Continuar (Só aparece se tiver algo selecionado) */}
       {selectedService && (
         <View className="p-6 absolute bottom-0 w-full bg-zinc-900/90">
           <TouchableOpacity 
@@ -104,7 +116,6 @@ export default function BarberProfile({ route, navigation }: any) {
         </View>
       )}
 
-      {/* Botão Voltar */}
       <TouchableOpacity onPress={() => navigation.goBack()} className="absolute top-4 left-4 bg-black/50 p-2 rounded-full">
         <Text className="text-white font-bold">⬅ Voltar</Text>
       </TouchableOpacity>

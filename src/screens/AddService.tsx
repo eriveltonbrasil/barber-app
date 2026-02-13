@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { db } from '../config/firebase';
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // <--- Import SaaS
 
 export default function AddService({ navigation, route }: any) {
   const [nome, setNome] = useState('');
@@ -31,6 +32,15 @@ export default function AddService({ navigation, route }: any) {
     setLoading(true);
 
     try {
+      // 1. SaaS: Busca o ID da barbearia na memória
+      const shopId = await AsyncStorage.getItem('@delp_shopId');
+
+      if (!shopId) {
+        Alert.alert("Erro", "Barbearia não identificada. Faça login novamente.");
+        setLoading(false);
+        return;
+      }
+
       const dataToSave = {
         nome: nome,
         preco: parseFloat(preco.replace(',', '.')),
@@ -38,14 +48,17 @@ export default function AddService({ navigation, route }: any) {
       };
 
       if (isEditing) {
-        // MODO EDIÇÃO: Atualiza o documento existente
+        // MODO EDIÇÃO: Atualiza o documento (não muda o shopId)
         const serviceRef = doc(db, "servicos", serviceToEdit.id);
         await updateDoc(serviceRef, dataToSave);
         Alert.alert("Sucesso!", "Serviço atualizado com sucesso!");
       } else {
-        // MODO CRIAÇÃO: Cria um novo
-        await addDoc(collection(db, "servicos"), dataToSave);
-        Alert.alert("Sucesso!", "Serviço cadastrado!");
+        // MODO CRIAÇÃO: Cria um novo com o carimbo da loja
+        await addDoc(collection(db, "servicos"), {
+            ...dataToSave,
+            shopId: shopId // <--- A MÁGICA DO SAAS
+        });
+        Alert.alert("Sucesso!", "Serviço cadastrado na unidade!");
       }
 
       navigation.goBack(); 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { db } from '../config/firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore'; // <--- Import SaaS
 import { useIsFocused } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // <--- Import SaaS
 
 export default function ManageServices({ navigation }: any) {
   const [services, setServices] = useState<any[]>([]);
@@ -12,7 +13,18 @@ export default function ManageServices({ navigation }: any) {
   async function fetchServices() {
     setLoading(true);
     try {
-      const querySnapshot = await getDocs(collection(db, "servicos"));
+      // 1. SaaS: Pega o ID da loja
+      const shopId = await AsyncStorage.getItem('@delp_shopId');
+      
+      if (!shopId) {
+        setLoading(false);
+        return;
+      }
+
+      // 2. SaaS: Filtra apenas serviços desta loja
+      const q = query(collection(db, "servicos"), where("shopId", "==", shopId));
+      const querySnapshot = await getDocs(q);
+      
       const lista = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -79,7 +91,7 @@ export default function ManageServices({ navigation }: any) {
               </View>
 
               <View className="flex-row">
-                 {/* Botão de Editar (Vamos ativar jajá) */}
+                 {/* Botão de Editar */}
                 <TouchableOpacity 
                    onPress={() => navigation.navigate('AddService', { serviceToEdit: item })}
                    className="bg-blue-500/20 p-3 rounded-lg border border-blue-500 mr-2"
@@ -96,6 +108,11 @@ export default function ManageServices({ navigation }: any) {
                 </TouchableOpacity>
               </View>
             </View>
+          )}
+          ListEmptyComponent={() => (
+             <Text className="text-zinc-500 text-center mt-10">
+               Nenhum serviço cadastrado nesta unidade.
+             </Text>
           )}
         />
       )}
