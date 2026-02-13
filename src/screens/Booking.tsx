@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Alert, ActivityIndicator, Linking, TextInput } from 'react-native';
 import { db, auth } from '../config/firebase';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'; // Importamos query/where/getDocs
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'; 
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 export default function Booking({ route, navigation }: any) {
@@ -10,9 +10,12 @@ export default function Booking({ route, navigation }: any) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   
-  // Lista de horários ocupados
+  // NOVOS CAMPOS PARA IDENTIFICAR O CLIENTE
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+
+  const [loading, setLoading] = useState(false);
   const [busyTimes, setBusyTimes] = useState<string[]>([]);
   const [loadingTimes, setLoadingTimes] = useState(false);
 
@@ -40,7 +43,6 @@ export default function Booking({ route, navigation }: any) {
   };
   const dates = generateDates();
 
-  // --- NOVA FUNÇÃO: Busca horários ocupados ---
   useEffect(() => {
     if (selectedDate) {
         checkAvailability(selectedDate);
@@ -49,16 +51,15 @@ export default function Booking({ route, navigation }: any) {
 
   async function checkAvailability(date: string) {
     setLoadingTimes(true);
-    setBusyTimes([]); // Limpa enquanto carrega
-    setSelectedTime(null); // Reseta horário selecionado
+    setBusyTimes([]); 
+    setSelectedTime(null); 
 
     try {
-        // Busca agendamentos DESSE barbeiro NESTA data
         const q = query(
             collection(db, "agendamentos"),
             where("barbeiroId", "==", barber.id),
             where("data", "==", date),
-            where("status", "==", "agendado") // Só conta os confirmados
+            where("status", "==", "agendado") 
         );
 
         const querySnapshot = await getDocs(q);
@@ -71,11 +72,14 @@ export default function Booking({ route, navigation }: any) {
     }
   }
 
-  const openWhatsApp = (date: string, time: string, method: string) => {
+  // Função 1: Cliente avisa Barbeiro (LINK CORRIGIDO)
+  const openWhatsAppToBarber = (date: string, time: string, method: string) => {
     const [ano, mes, dia] = date.split('-');
     const dataFormatada = `${dia}/${mes}`;
-    const message = `Olá *${barber.nome}*! 👋\nAcabei de agendar pelo App:\n\n✂️ *${service.nome}*\n📅 ${dataFormatada} às ${time}\n💰 R$ ${service.preco.toFixed(2)}\n💳 Pagamento: *${method.toUpperCase()}*`;
-    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`);
+    const message = `Olá *${barber.nome}*! Sou o *${clientName}* 👋\nAcabei de agendar:\n\n✂️ *${service.nome}*\n📅 ${dataFormatada} às ${time}\n💰 Pagamento: ${method.toUpperCase()}`;
+    
+    // MUDANÇA: Usamos https://wa.me/?text que é mais garantido de abrir
+    Linking.openURL(`https://wa.me/?text=${encodeURIComponent(message)}`);
   };
 
   async function handleConfirmBooking() {
@@ -86,6 +90,11 @@ export default function Booking({ route, navigation }: any) {
     if (!paymentMethod) {
       Alert.alert("Atenção", "Selecione a forma de pagamento!");
       return;
+    }
+    // Validação dos novos campos
+    if (clientName.trim() === '' || clientPhone.trim() === '') {
+        Alert.alert("Atenção", "Preencha seu Nome e WhatsApp para contato!");
+        return;
     }
 
     setLoading(true);
@@ -103,6 +112,11 @@ export default function Booking({ route, navigation }: any) {
       await addDoc(collection(db, "agendamentos"), {
         clienteId: auth.currentUser?.uid,
         clienteEmail: auth.currentUser?.email,
+        
+        // SALVANDO DADOS DO CLIENTE
+        clienteNome: clientName,
+        clienteTelefone: clientPhone,
+
         barbeiroId: barber.id,
         barbeiroNome: barber.nome,
         barbeiroFoto: barber.foto,
@@ -125,7 +139,7 @@ export default function Booking({ route, navigation }: any) {
         [
           { text: "Não, obrigado", onPress: () => navigation.navigate('Home') },
           { text: "Sim, Enviar no Zap 💬", onPress: () => {
-              openWhatsApp(selectedDate, selectedTime, paymentMethod);
+              openWhatsAppToBarber(selectedDate, selectedTime, paymentMethod);
               navigation.navigate('Home');
             }
           }
@@ -140,113 +154,136 @@ export default function Booking({ route, navigation }: any) {
   }
 
   return (
-    <View className="flex-1 bg-zinc-900 px-6 pt-12">
-      <View className="flex-row items-center mb-6">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
-          <Text className="text-orange-500 text-lg font-bold">← Voltar</Text>
-        </TouchableOpacity>
-        <Text className="text-white text-2xl font-bold">Agendar Horário</Text>
-      </View>
+    <FlatList
+      className="flex-1 bg-zinc-900 px-6 pt-12"
+      data={[]} 
+      renderItem={null}
+      ListHeaderComponent={
+        <>
+            <View className="flex-row items-center mb-6">
+                <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
+                <Text className="text-orange-500 text-lg font-bold">← Voltar</Text>
+                </TouchableOpacity>
+                <Text className="text-white text-2xl font-bold">Agendar Horário</Text>
+            </View>
 
-      <View className="bg-zinc-800 p-4 rounded-xl mb-6 border border-zinc-700">
-        <Text className="text-zinc-400">Serviço Escolhido:</Text>
-        <Text className="text-white text-xl font-bold">{service.nome}</Text>
-        <Text className="text-orange-500 font-bold">R$ {service.preco.toFixed(2)} • {service.duracao} min</Text>
-        <Text className="text-zinc-500 mt-2">Profissional: {barber.nome}</Text>
-      </View>
+            <View className="bg-zinc-800 p-4 rounded-xl mb-6 border border-zinc-700">
+                <Text className="text-zinc-400">Serviço Escolhido:</Text>
+                <Text className="text-white text-xl font-bold">{service.nome}</Text>
+                <Text className="text-orange-500 font-bold">R$ {service.preco.toFixed(2)} • {service.duracao} min</Text>
+                <Text className="text-zinc-500 mt-2">Profissional: {barber.nome}</Text>
+            </View>
 
-      <Text className="text-white text-lg font-bold mb-3">Escolha o Dia</Text>
-      <View className="h-20 mb-6">
-        <FlatList 
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={dates}
-          keyExtractor={(item) => item.fullDate}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              onPress={() => setSelectedDate(item.fullDate)}
-              className={`p-4 rounded-xl mr-3 justify-center items-center border ${
-                selectedDate === item.fullDate 
-                ? 'bg-orange-500 border-orange-500' 
-                : 'bg-zinc-800 border-zinc-700'
-              }`}
-            >
-              <Text className={`font-bold ${selectedDate === item.fullDate ? 'text-white' : 'text-zinc-400'}`}>
-                {item.display}
-              </Text>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
+            {/* NOVOS CAMPOS DE IDENTIFICAÇÃO */}
+            <Text className="text-white text-lg font-bold mb-2">Seus Dados</Text>
+            <TextInput 
+                className="bg-zinc-800 text-white p-4 rounded-xl mb-3 border border-zinc-700"
+                placeholder="Seu Nome (ex: João)"
+                placeholderTextColor="#71717a"
+                value={clientName}
+                onChangeText={setClientName}
+            />
+            <TextInput 
+                className="bg-zinc-800 text-white p-4 rounded-xl mb-6 border border-zinc-700"
+                placeholder="Seu WhatsApp (ex: 11999999999)"
+                placeholderTextColor="#71717a"
+                keyboardType="phone-pad"
+                value={clientPhone}
+                onChangeText={setClientPhone}
+            />
 
-      <Text className="text-white text-lg font-bold mb-3">Escolha o Horário</Text>
-      <View className="h-16 mb-6">
-        {loadingTimes ? (
-            <ActivityIndicator color="#f97316" size="small" />
-        ) : (
-            <FlatList 
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={barber.horarios} 
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => {
-                // Se o horário estiver na lista de ocupados, ele fica invisível (ou bloqueado)
-                const isBusy = busyTimes.includes(item);
-                
-                if (isBusy) return null; // RETORNA NULL = NÃO MOSTRA O HORÁRIO
-
-                return (
+            <Text className="text-white text-lg font-bold mb-3">Escolha o Dia</Text>
+            <View className="h-20 mb-6">
+                <FlatList 
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={dates}
+                keyExtractor={(item) => item.fullDate}
+                renderItem={({ item }) => (
                     <TouchableOpacity 
-                    onPress={() => setSelectedTime(item)}
-                    className={`px-6 py-3 rounded-xl mr-3 justify-center items-center border ${
-                        selectedTime === item 
+                    onPress={() => setSelectedDate(item.fullDate)}
+                    className={`p-4 rounded-xl mr-3 justify-center items-center border ${
+                        selectedDate === item.fullDate 
                         ? 'bg-orange-500 border-orange-500' 
                         : 'bg-zinc-800 border-zinc-700'
                     }`}
                     >
-                    <Text className={`font-bold ${selectedTime === item ? 'text-white' : 'text-zinc-400'}`}>
-                        {item}
+                    <Text className={`font-bold ${selectedDate === item.fullDate ? 'text-white' : 'text-zinc-400'}`}>
+                        {item.display}
                     </Text>
                     </TouchableOpacity>
-                );
-            }}
-            ListEmptyComponent={() => (
-                <Text className="text-zinc-500 italic">Selecione um dia para ver os horários.</Text>
-            )}
-            />
-        )}
-      </View>
+                )}
+                />
+            </View>
 
-      <Text className="text-white text-lg font-bold mb-3">Pagamento no Local</Text>
-      <View className="flex-row justify-between mb-8">
-        {paymentOptions.map((option) => (
-          <TouchableOpacity
-            key={option.id}
-            onPress={() => setPaymentMethod(option.id)}
-            className={`flex-1 p-3 mx-1 rounded-xl items-center border ${
-              paymentMethod === option.id
-              ? 'bg-orange-500 border-orange-500'
-              : 'bg-zinc-800 border-zinc-700'
-            }`}
-          >
-            <Text className={`font-bold ${paymentMethod === option.id ? 'text-white' : 'text-zinc-400'}`}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <Text className="text-white text-lg font-bold mb-3">Escolha o Horário</Text>
+            <View className="h-16 mb-6">
+                {loadingTimes ? (
+                    <ActivityIndicator color="#f97316" size="small" />
+                ) : (
+                    <FlatList 
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    data={barber.horarios} 
+                    keyExtractor={(item) => item}
+                    renderItem={({ item }) => {
+                        const isBusy = busyTimes.includes(item);
+                        if (isBusy) return null; 
 
-      <TouchableOpacity 
-        className={`p-4 rounded-xl items-center ${(!selectedDate || !selectedTime || !paymentMethod) ? 'bg-zinc-700' : 'bg-orange-500'}`}
-        onPress={handleConfirmBooking}
-        disabled={loading || !selectedDate || !selectedTime || !paymentMethod}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text className="text-white font-bold text-lg">Confirmar Agendamento ✅</Text>
-        )}
-      </TouchableOpacity>
-    </View>
+                        return (
+                            <TouchableOpacity 
+                            onPress={() => setSelectedTime(item)}
+                            className={`px-6 py-3 rounded-xl mr-3 justify-center items-center border ${
+                                selectedTime === item 
+                                ? 'bg-orange-500 border-orange-500' 
+                                : 'bg-zinc-800 border-zinc-700'
+                            }`}
+                            >
+                            <Text className={`font-bold ${selectedTime === item ? 'text-white' : 'text-zinc-400'}`}>
+                                {item}
+                            </Text>
+                            </TouchableOpacity>
+                        );
+                    }}
+                    ListEmptyComponent={() => (
+                        <Text className="text-zinc-500 italic">Selecione um dia para ver os horários.</Text>
+                    )}
+                    />
+                )}
+            </View>
+
+            <Text className="text-white text-lg font-bold mb-3">Pagamento no Local</Text>
+            <View className="flex-row justify-between mb-8">
+                {paymentOptions.map((option) => (
+                <TouchableOpacity
+                    key={option.id}
+                    onPress={() => setPaymentMethod(option.id)}
+                    className={`flex-1 p-3 mx-1 rounded-xl items-center border ${
+                    paymentMethod === option.id
+                    ? 'bg-orange-500 border-orange-500'
+                    : 'bg-zinc-800 border-zinc-700'
+                    }`}
+                >
+                    <Text className={`font-bold ${paymentMethod === option.id ? 'text-white' : 'text-zinc-400'}`}>
+                    {option.label}
+                    </Text>
+                </TouchableOpacity>
+                ))}
+            </View>
+
+            <TouchableOpacity 
+                className={`p-4 rounded-xl items-center mb-10 ${(!selectedDate || !selectedTime || !paymentMethod) ? 'bg-zinc-700' : 'bg-orange-500'}`}
+                onPress={handleConfirmBooking}
+                disabled={loading || !selectedDate || !selectedTime || !paymentMethod}
+            >
+                {loading ? (
+                <ActivityIndicator color="#fff" />
+                ) : (
+                <Text className="text-white font-bold text-lg">Confirmar Agendamento ✅</Text>
+                )}
+            </TouchableOpacity>
+        </>
+      }
+    />
   );
 }
