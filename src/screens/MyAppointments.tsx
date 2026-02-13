@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { db, auth } from '../config/firebase';
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // <--- Import SaaS
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 export default function MyAppointments({ navigation }: any) {
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -12,18 +12,17 @@ export default function MyAppointments({ navigation }: any) {
     setLoading(true);
     try {
       const user = auth.currentUser;
-      const shopId = await AsyncStorage.getItem('@delp_shopId'); // 1. Pega a loja atual
+      const shopId = await AsyncStorage.getItem('@delp_shopId'); 
 
       if (!user || !shopId) {
           setLoading(false);
           return;
       }
 
-      // 2. Busca agendamentos DESTE USUÁRIO nesta LOJA ESPECÍFICA
       const q = query(
         collection(db, "agendamentos"),
         where("clienteId", "==", user.uid),
-        where("shopId", "==", shopId) // <--- Filtro SaaS
+        where("shopId", "==", shopId) 
       );
 
       const querySnapshot = await getDocs(q);
@@ -31,6 +30,17 @@ export default function MyAppointments({ navigation }: any) {
         id: doc.id,
         ...doc.data()
       }));
+
+      // --- ORDENAÇÃO (DATA + HORA) ---
+      // Como data é "YYYY-MM-DD" e hora é "HH:MM", a comparação de string funciona perfeitamente
+      list.sort((a: any, b: any) => {
+        // Primeiro compara a Data
+        if (a.data !== b.data) {
+            return a.data.localeCompare(b.data);
+        }
+        // Se a data for igual, compara a Hora
+        return a.horario.localeCompare(b.horario);
+      });
 
       setAppointments(list);
     } catch (error) {
@@ -55,14 +65,13 @@ export default function MyAppointments({ navigation }: any) {
           style: "destructive", 
           onPress: async () => {
             await deleteDoc(doc(db, "agendamentos", id));
-            fetchAppointments(); // Atualiza a lista
+            fetchAppointments(); 
           }
         }
       ]
     );
   }
 
-  // Função para formatar data (Ex: 2023-12-25 -> 25/12)
   const formatDate = (dateString: string) => {
     if(!dateString) return "";
     const [year, month, day] = dateString.split('-');
@@ -91,7 +100,6 @@ export default function MyAppointments({ navigation }: any) {
                   <Text className="text-orange-500 font-bold text-lg">{item.servicoNome}</Text>
                   <Text className="text-zinc-400">Barbeiro: {item.barbeiroNome}</Text>
                 </View>
-                {/* AQUI ESTÁ A CORREÇÃO DO PREÇO 👇 */}
                 <Text className="text-white font-bold text-xl">
                   R$ {item.preco ? Number(item.preco).toFixed(2).replace('.', ',') : '0,00'}
                 </Text>

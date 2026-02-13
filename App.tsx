@@ -6,9 +6,8 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './src/config/firebase';
 
 // Importação das Telas
-import AccessScreen from './src/screens/AccessScreen'; // <--- A Portaria
+import AccessScreen from './src/screens/AccessScreen'; 
 import Login from './src/screens/Login';
-// REMOVIDO: import SignUp from './src/screens/SignUp'; 
 import Home from './src/screens/Home';
 import AdminPanel from './src/screens/AdminPanel';
 import AddBarber from './src/screens/AddBarber';
@@ -18,6 +17,7 @@ import ManageServices from './src/screens/ManageServices';
 import BarberProfile from './src/screens/BarberProfile';
 import Booking from './src/screens/Booking';
 import MyAppointments from './src/screens/MyAppointments';
+import FinancialScreen from './src/screens/FinancialScreen'; // <--- Importou aqui?
 
 const Stack = createNativeStackNavigator();
 
@@ -45,10 +45,13 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          // 🔓 SE ESTIVER LOGADO (Área Protegida)
+          // 🔓 ÁREA LOGADA
           <>
             <Stack.Screen name="Home" component={Home} />
             <Stack.Screen name="AdminPanel" component={AdminPanel} />
+            <Stack.Screen name="FinancialScreen" component={FinancialScreen} /> 
+            {/* ^^^ ELA PRECISA ESTAR AQUI! */}
+            
             <Stack.Screen name="AddBarber" component={AddBarber} />
             <Stack.Screen name="AddService" component={AddService} />
             <Stack.Screen name="ManageBarbers" component={ManageBarbers} />
@@ -58,12 +61,10 @@ export default function App() {
             <Stack.Screen name="MyAppointments" component={MyAppointments} />
           </>
         ) : (
-          // 🔒 SE NÃO ESTIVER LOGADO (Área Pública)
+          // 🔒 ÁREA PÚBLICA
           <>
-            {/* A Portaria vem primeiro! */}
             <Stack.Screen name="AccessScreen" component={AccessScreen} />
             <Stack.Screen name="Login" component={Login} />
-            {/* REMOVIDO: <Stack.Screen name="SignUp" component={SignUp} /> */}
           </>
         )}
       </Stack.Navigator>

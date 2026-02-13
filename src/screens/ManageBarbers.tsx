@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, Image, Alert, ActivityIndicator
 import { db } from '../config/firebase';
 import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { useIsFocused } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // <--- Importante
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ManageBarbers({ navigation }: any) {
   const [barbers, setBarbers] = useState<any[]>([]);
@@ -13,15 +13,9 @@ export default function ManageBarbers({ navigation }: any) {
   async function fetchBarbers() {
     setLoading(true);
     try {
-      // 1. Pega o ID da loja na memória
       const shopId = await AsyncStorage.getItem('@delp_shopId');
-      
-      if (!shopId) {
-        setLoading(false);
-        return;
-      }
+      if (!shopId) { setLoading(false); return; }
 
-      // 2. Filtra: Só traz barbeiros desta loja
       const q = query(collection(db, "barbeiros"), where("shopId", "==", shopId));
       const querySnapshot = await getDocs(q);
       
@@ -31,51 +25,47 @@ export default function ManageBarbers({ navigation }: any) {
       }));
       setBarbers(lista);
     } catch (error) {
-      console.log("Erro ao buscar:", error);
+      console.log(error);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (isFocused) {
-      fetchBarbers();
-    }
+    if (isFocused) fetchBarbers();
   }, [isFocused]);
 
   function confirmDelete(id: string, nome: string) {
-    Alert.alert(
-      "Excluir Barbeiro",
-      `Tem certeza que deseja remover ${nome}?`,
-      [
+    Alert.alert("Excluir", `Remover ${nome}?`, [
         { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Sim, Excluir", 
-          style: "destructive", 
-          onPress: () => handleDelete(id) 
-        }
-      ]
-    );
+        { text: "Sim", style: "destructive", onPress: () => handleDelete(id) }
+    ]);
   }
 
   async function handleDelete(id: string) {
     try {
       await deleteDoc(doc(db, "barbeiros", id));
-      Alert.alert("Sucesso", "Barbeiro removido!");
       fetchBarbers(); 
-    } catch (error) {
-      Alert.alert("Erro", "Não foi possível excluir.");
-    }
+    } catch (error) { Alert.alert("Erro ao excluir"); }
   }
 
   return (
     <View className="flex-1 bg-zinc-900 px-6 pt-12">
-      <View className="flex-row items-center mb-6">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
+      <View className="flex-row items-center justify-between mb-6">
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text className="text-orange-500 text-lg font-bold">← Voltar</Text>
         </TouchableOpacity>
-        <Text className="text-white text-2xl font-bold">Gerenciar Equipe</Text>
+        <Text className="text-white text-2xl font-bold">Equipe</Text>
       </View>
+
+      {/* BOTÃO ADICIONAR (RECUPERADO!) */}
+      <TouchableOpacity 
+        className="bg-orange-500 p-4 rounded-xl mb-6 items-center flex-row justify-center"
+        onPress={() => navigation.navigate('AddBarber')}
+      >
+        <Text className="text-white font-bold text-lg mr-2">+</Text>
+        <Text className="text-white font-bold text-lg">Adicionar Novo Barbeiro</Text>
+      </TouchableOpacity>
 
       {loading ? (
         <ActivityIndicator size="large" color="#f97316" />
@@ -86,39 +76,21 @@ export default function ManageBarbers({ navigation }: any) {
           renderItem={({ item }) => (
             <View className="bg-zinc-800 p-4 rounded-xl mb-3 flex-row items-center justify-between border border-zinc-700">
               <View className="flex-row items-center flex-1">
-                <Image 
-                  source={{ uri: item.foto }} 
-                  className="w-12 h-12 rounded-full mr-3 bg-zinc-700" 
-                />
+                <Image source={{ uri: item.foto }} className="w-12 h-12 rounded-full mr-3 bg-zinc-700" />
                 <View>
                   <Text className="text-white font-bold text-lg">{item.nome}</Text>
                   <Text className="text-zinc-400 text-sm">{item.especialidade}</Text>
                 </View>
               </View>
-
               <View className="flex-row">
-                 {/* Botão de Editar */}
-                <TouchableOpacity 
-                   onPress={() => navigation.navigate('AddBarber', { barberToEdit: item })}
-                   className="bg-blue-500/20 p-3 rounded-lg border border-blue-500 mr-2"
-                >
-                  <Text className="text-blue-500 font-bold">✏️</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('AddBarber', { barberToEdit: item })} className="bg-blue-500/20 p-3 rounded-lg mr-2">
+                  <Text>✏️</Text>
                 </TouchableOpacity>
-
-                {/* Botão de Excluir */}
-                <TouchableOpacity 
-                  onPress={() => confirmDelete(item.id, item.nome)}
-                  className="bg-red-500/20 p-3 rounded-lg border border-red-500"
-                >
-                  <Text className="text-red-500 font-bold">🗑️</Text>
+                <TouchableOpacity onPress={() => confirmDelete(item.id, item.nome)} className="bg-red-500/20 p-3 rounded-lg">
+                  <Text>🗑️</Text>
                 </TouchableOpacity>
               </View>
             </View>
-          )}
-          ListEmptyComponent={() => (
-             <Text className="text-zinc-500 text-center mt-10">
-               Nenhum profissional cadastrado nesta unidade.
-             </Text>
           )}
         />
       )}

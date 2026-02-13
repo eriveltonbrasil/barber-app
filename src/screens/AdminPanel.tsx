@@ -1,53 +1,58 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-export default function AdminPanel({ navigation }: any) {
+export default function AdminPanel() {
+  const navigation = useNavigation<any>();
+
   return (
     <View className="flex-1 bg-zinc-900 px-6 pt-12">
-      <View className="flex-row justify-between items-center mb-8">
-        <Text className="text-white text-2xl font-bold text-orange-500">⚙️ Painel Admin</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} className="bg-zinc-800 p-2 rounded-full">
-           <Text className="text-white font-bold">✖</Text>
+      <View className="mb-8">
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text className="text-orange-500 text-lg font-bold">← Voltar</Text>
         </TouchableOpacity>
+        <Text className="text-white text-3xl font-bold mt-4">Painel Admin ⚙️</Text>
+        <Text className="text-zinc-400">Gerencie sua barbearia por aqui.</Text>
       </View>
 
-      <Text className="text-zinc-400 mb-6">Área exclusiva para gerenciamento.</Text>
+      {/* Botão FINANCEIRO (Novo!) */}
+      <TouchableOpacity 
+        className="bg-green-600 p-5 rounded-xl mb-4 flex-row items-center border border-green-400"
+        onPress={() => navigation.navigate('FinancialScreen')}
+      >
+        <View className="bg-white/20 p-3 rounded-full mr-4">
+          <Text className="text-2xl">💰</Text>
+        </View>
+        <View>
+          <Text className="text-white font-bold text-xl">Financeiro & Caixa</Text>
+          <Text className="text-green-100 text-sm">Ver faturamento do dia</Text>
+        </View>
+      </TouchableOpacity>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* SEÇÃO BARBEIROS */}
-        <Text className="text-white font-bold text-lg mb-3">👨‍⚖️ Equipe</Text>
-        <TouchableOpacity 
-          className="bg-zinc-800 p-4 rounded-xl mb-3 border border-zinc-700"
-          onPress={() => navigation.navigate('AddBarber')}
-        >
-          <Text className="text-white font-bold">➕ Cadastrar Novo Barbeiro</Text>
-        </TouchableOpacity>
+      <Text className="text-zinc-500 font-bold mb-2 mt-4 uppercase text-xs">Cadastros</Text>
 
-        <TouchableOpacity 
-          className="bg-zinc-800 p-4 rounded-xl mb-6 border border-zinc-700 flex-row justify-between"
-          onPress={() => navigation.navigate('ManageBarbers')}
-        >
-          <Text className="text-zinc-300">📂 Gerenciar / Editar Equipe</Text>
-          <Text className="text-orange-500">→</Text>
-        </TouchableOpacity>
+      <TouchableOpacity 
+        className="bg-zinc-800 p-4 rounded-xl mb-3 flex-row items-center border border-zinc-700"
+        onPress={() => navigation.navigate('ManageBarbers')}
+      >
+        <Text className="text-2xl mr-4">✂️</Text>
+        <View>
+          <Text className="text-white font-bold text-lg">Gerenciar Equipe</Text>
+          <Text className="text-zinc-400 text-sm">Adicionar ou remover barbeiros</Text>
+        </View>
+      </TouchableOpacity>
 
-        {/* SEÇÃO SERVIÇOS */}
-        <Text className="text-white font-bold text-lg mb-3">✂️ Serviços e Preços</Text>
-        <TouchableOpacity 
-          className="bg-zinc-800 p-4 rounded-xl mb-3 border border-zinc-700"
-          onPress={() => navigation.navigate('AddService')}
-        >
-          <Text className="text-white font-bold">➕ Cadastrar Novo Serviço</Text>
-        </TouchableOpacity>
+      <TouchableOpacity 
+        className="bg-zinc-800 p-4 rounded-xl mb-3 flex-row items-center border border-zinc-700"
+        onPress={() => navigation.navigate('ManageServices')}
+      >
+        <Text className="text-2xl mr-4">🏷️</Text>
+        <View>
+          <Text className="text-white font-bold text-lg">Gerenciar Serviços</Text>
+          <Text className="text-zinc-400 text-sm">Preços e tipos de corte</Text>
+        </View>
+      </TouchableOpacity>
 
-        <TouchableOpacity 
-          className="bg-zinc-800 p-4 rounded-xl mb-6 border border-zinc-700 flex-row justify-between"
-          onPress={() => navigation.navigate('ManageServices')}
-        >
-          <Text className="text-zinc-300">📂 Gerenciar / Editar Serviços</Text>
-          <Text className="text-orange-500">→</Text>
-        </TouchableOpacity>
-      </ScrollView>
     </View>
   );
 }
