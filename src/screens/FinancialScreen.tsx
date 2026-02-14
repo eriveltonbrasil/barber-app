@@ -18,7 +18,6 @@ export default function FinancialScreen({ navigation }: any) {
     cartao: 0
   });
 
-  // Função para formatar YYYY-MM-DD (Para o Banco de Dados)
   const formatDateForDB = (date: Date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -26,7 +25,6 @@ export default function FinancialScreen({ navigation }: any) {
     return `${year}-${month}-${day}`;
   };
 
-  // Função para formatar DD/MM (Para mostrar na tela)
   const formatDateForDisplay = (date: Date) => {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -34,7 +32,6 @@ export default function FinancialScreen({ navigation }: any) {
     return `${week}, ${day}/${month}`;
   };
 
-  // Navegar entre dias
   const changeDay = (days: number) => {
     const newDate = new Date(selectedDate);
     newDate.setDate(selectedDate.getDate() + days);
@@ -45,7 +42,7 @@ export default function FinancialScreen({ navigation }: any) {
     setLoading(true);
     try {
       const shopId = await AsyncStorage.getItem('@delp_shopId');
-      const dateQuery = formatDateForDB(selectedDate); // Usa a data selecionada
+      const dateQuery = formatDateForDB(selectedDate); 
 
       if (!shopId) return;
 
@@ -92,7 +89,6 @@ export default function FinancialScreen({ navigation }: any) {
     }
   }
 
-  // Recarrega sempre que mudar a data
   useEffect(() => {
     fetchFinancialData();
   }, [selectedDate]);
@@ -105,14 +101,19 @@ export default function FinancialScreen({ navigation }: any) {
     return cleanPhone;
   };
 
+  // --- CORREÇÃO AQUI: Removemos o canOpenURL ---
   const contactClient = async (phone: string, name: string, time: string) => {
     if (!phone) return;
     const cleanNumber = formatPhoneForWhatsApp(phone);
     const message = `Olá ${name}! ✂️ Aqui é da barbearia. Tudo certo para seu horário de hoje às *${time}*?`;
     const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
-    const supported = await Linking.canOpenURL(url);
-    if (supported) await Linking.openURL(url);
-    else Alert.alert("Erro", "Não foi possível abrir o WhatsApp.");
+    
+    // Tenta abrir direto. Se tiver app, abre app. Se não, abre navegador.
+    try {
+        await Linking.openURL(url);
+    } catch (err) {
+        Alert.alert("Erro", "Não foi possível abrir o WhatsApp.");
+    }
   };
 
   return (
