@@ -1,97 +1,106 @@
-// src/screens/Login.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase'; // Importa nossa conexão
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Login({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false); // Alterna entre Login e Cadastro
+  
+  // NOVO: Estado para controlar se mostra ou esconde a senha
+  const [showPassword, setShowPassword] = useState(false);
 
-  async function handleAccess() {
+  async function handleLogin() {
     if (email === '' || password === '') {
-      Alert.alert("Atenção", "Preencha todos os campos!");
+      Alert.alert("Atenção", "Preencha email e senha");
       return;
     }
 
     setLoading(true);
 
     try {
-      if (isRegistering) {
-        // Criar conta
-        await createUserWithEmailAndPassword(auth, email, password);
-        Alert.alert("Sucesso", "Conta criada! Bem-vindo.");
-      } else {
-        // Fazer login
-        await signInWithEmailAndPassword(auth, email, password);
-        // O App.tsx vai perceber o login e mudar de tela automaticamente
-      }
+      await signInWithEmailAndPassword(auth, email, password);
+      // O App.tsx vai perceber o login e mudar a tela sozinho
     } catch (error: any) {
       console.log(error);
-      let msg = "Ocorreu um erro.";
+      let msg = "Não foi possível entrar.";
       if (error.code === 'auth/invalid-email') msg = "Email inválido.";
-      if (error.code === 'auth/weak-password') msg = "A senha deve ter 6+ caracteres.";
       if (error.code === 'auth/user-not-found') msg = "Usuário não encontrado.";
       if (error.code === 'auth/wrong-password') msg = "Senha incorreta.";
-      if (error.code === 'auth/email-already-in-use') msg = "Este email já está cadastrado.";
-      
       Alert.alert("Erro", msg);
-    } finally {
-      setLoading(false);
+      setLoading(false); // Só para o loading se der erro
     }
   }
 
   return (
-    <View className="flex-1 bg-zinc-900 justify-center px-6">
-      <Text className="text-white text-4xl font-bold text-center mb-2">
-        Elite<Text className="text-orange-500">Barber</Text>
-      </Text>
-      <Text className="text-zinc-400 text-center mb-10 text-lg">
-        Seu estilo, no seu tempo.
-      </Text>
+    <View className="flex-1 bg-zinc-900 justify-center px-8">
+      
+      <View className="items-center mb-10">
+        <Text className="text-white text-3xl font-bold">
+            <Text className="text-white">Elite</Text>
+            <Text className="text-orange-500">Barber</Text>
+        </Text>
+        <Text className="text-zinc-400 mt-2">Seu estilo, no seu tempo.</Text>
+      </View>
 
-      <TextInput
+      {/* INPUT EMAIL */}
+      <TextInput 
+        className="bg-zinc-800 text-white p-4 rounded-xl mb-4 border border-zinc-700"
         placeholder="Email"
         placeholderTextColor="#71717a"
+        keyboardType="email-address"
+        autoCapitalize="none"
         value={email}
         onChangeText={setEmail}
-        className="bg-zinc-800 text-white p-4 rounded-lg mb-4 text-lg border border-zinc-700"
-        autoCapitalize="none"
-        keyboardType="email-address"
       />
 
-      <TextInput
-        placeholder="Senha"
-        placeholderTextColor="#71717a"
-        value={password}
-        onChangeText={setPassword}
-        className="bg-zinc-800 text-white p-4 rounded-lg mb-8 text-lg border border-zinc-700"
-        secureTextEntry
-      />
+      {/* INPUT SENHA COM BOTÃO DE OLHO 👁️ */}
+      <View className="flex-row items-center bg-zinc-800 rounded-xl mb-6 border border-zinc-700">
+        <TextInput 
+          className="flex-1 text-white p-4" 
+          placeholder="Senha"
+          placeholderTextColor="#71717a"
+          secureTextEntry={!showPassword} // <--- A MÁGICA ACONTECE AQUI
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity 
+            onPress={() => setShowPassword(!showPassword)}
+            className="p-4"
+        >
+            <Text className="text-zinc-400 text-lg">
+                {showPassword ? "🙈" : "👁️"}
+            </Text>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity 
-        onPress={handleAccess}
-        className="bg-orange-500 p-4 rounded-lg items-center"
+        className="bg-orange-500 p-4 rounded-xl items-center mb-6"
+        onPress={handleLogin}
+        disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#FFF" />
+          <ActivityIndicator color="#fff" />
         ) : (
-          <Text className="text-white font-bold text-lg">
-            {isRegistering ? "CRIAR CONTA" : "ENTRAR"}
-          </Text>
+          <Text className="text-white font-bold text-lg">ENTRAR</Text>
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        onPress={() => setIsRegistering(!isRegistering)}
-        className="mt-6 p-2"
-      >
-        <Text className="text-zinc-400 text-center">
-          {isRegistering ? "Já tem conta? Faça Login" : "Não tem conta? Cadastre-se"}
+      <TouchableOpacity onPress={() => navigation.navigate('AccessScreen')}>
+        <Text className="text-zinc-500 text-center">
+            Não tem conta? <Text className="text-orange-500 font-bold">Cadastre-se</Text>
         </Text>
       </TouchableOpacity>
+
+      {/* Botão extra para trocar de Barbearia */}
+      <TouchableOpacity onPress={() => navigation.replace('AccessScreen')} className="mt-8">
+        <Text className="text-zinc-600 text-center text-xs">
+            Trocar de Barbearia (Código)
+        </Text>
+      </TouchableOpacity>
+
     </View>
   );
 }

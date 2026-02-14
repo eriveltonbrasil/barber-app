@@ -7,6 +7,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function FinancialScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
+  
+  // DATA SELECIONADA (Começa com HOJE)
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
   const [totals, setTotals] = useState({
     total: 0,
     pix: 0,
@@ -14,22 +18,41 @@ export default function FinancialScreen({ navigation }: any) {
     cartao: 0
   });
 
-  const getTodayDate = () => {
-    return new Date().toISOString().split('T')[0];
+  // Função para formatar YYYY-MM-DD (Para o Banco de Dados)
+  const formatDateForDB = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Função para formatar DD/MM (Para mostrar na tela)
+  const formatDateForDisplay = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const week = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][date.getDay()];
+    return `${week}, ${day}/${month}`;
+  };
+
+  // Navegar entre dias
+  const changeDay = (days: number) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(selectedDate.getDate() + days);
+    setSelectedDate(newDate);
   };
 
   async function fetchFinancialData() {
     setLoading(true);
     try {
       const shopId = await AsyncStorage.getItem('@delp_shopId');
-      const today = getTodayDate();
+      const dateQuery = formatDateForDB(selectedDate); // Usa a data selecionada
 
       if (!shopId) return;
 
       const q = query(
         collection(db, "agendamentos"), 
         where("shopId", "==", shopId),
-        where("data", "==", today) 
+        where("data", "==", dateQuery) 
       );
 
       const querySnapshot = await getDocs(q);
@@ -52,7 +75,6 @@ export default function FinancialScreen({ navigation }: any) {
         else if (data.metodoPagamento === 'cartao') sumCartao += preco;
       });
 
-      // Ordena por horário
       list.sort((a, b) => a.horario.localeCompare(b.horario));
 
       setTransactions(list);
@@ -70,53 +92,56 @@ export default function FinancialScreen({ navigation }: any) {
     }
   }
 
+  // Recarrega sempre que mudar a data
   useEffect(() => {
     fetchFinancialData();
-  }, []);
+  }, [selectedDate]);
 
-  // --- NOVA FUNÇÃO DE LIMPEZA DO TELEFONE ---
   const formatPhoneForWhatsApp = (phone: string) => {
-    // 1. Remove tudo que NÃO for número (tira parenteses, traços, espaços)
     let cleanPhone = phone.replace(/\D/g, ''); 
-    
-    // 2. Se não tiver o código do país (55), adiciona
-    // Verifica se o numero tem tamanho de DDD + Celular (10 ou 11 digitos)
     if (cleanPhone.length >= 10 && cleanPhone.length <= 11) {
         cleanPhone = '55' + cleanPhone;
     }
-
     return cleanPhone;
   };
 
-  const contactClient = async (phone: string, name: string) => {
+  const contactClient = async (phone: string, name: string, time: string) => {
     if (!phone) return;
-
     const cleanNumber = formatPhoneForWhatsApp(phone);
-    const message = `Olá ${name}! ✂️ Aqui é da barbearia. Tudo certo para seu horário hoje?`;
+    const message = `Olá ${name}! ✂️ Aqui é da barbearia. Tudo certo para seu horário de hoje às *${time}*?`;
     const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
-
-    // Verifica se consegue abrir (se tem zap ou navegador)
     const supported = await Linking.canOpenURL(url);
-
-    if (supported) {
-        await Linking.openURL(url);
-    } else {
-        Alert.alert("Erro", "Não foi possível abrir o WhatsApp.");
-    }
+    if (supported) await Linking.openURL(url);
+    else Alert.alert("Erro", "Não foi possível abrir o WhatsApp.");
   };
 
   return (
     <View className="flex-1 bg-zinc-900 px-6 pt-12">
-      <View className="flex-row items-center mb-6">
+      <View className="flex-row items-center mb-4">
         <TouchableOpacity onPress={() => navigation.goBack()} className="mr-4">
           <Text className="text-orange-500 text-lg font-bold">← Voltar</Text>
         </TouchableOpacity>
         <Text className="text-white text-2xl font-bold">Agenda & Caixa 💰</Text>
       </View>
 
-      {/* CARD DO TOTAL GERAL */}
+      {/* NAVEGAÇÃO DE DATAS */}
+      <View className="flex-row justify-between items-center bg-zinc-800 p-2 rounded-xl mb-6 border border-zinc-700">
+        <TouchableOpacity onPress={() => changeDay(-1)} className="p-3">
+            <Text className="text-orange-500 text-2xl font-bold">‹</Text>
+        </TouchableOpacity>
+        
+        <View className="items-center">
+            <Text className="text-zinc-400 text-xs uppercase">Visualizando</Text>
+            <Text className="text-white text-xl font-bold">{formatDateForDisplay(selectedDate)}</Text>
+        </View>
+
+        <TouchableOpacity onPress={() => changeDay(1)} className="p-3">
+            <Text className="text-orange-500 text-2xl font-bold">›</Text>
+        </TouchableOpacity>
+      </View>
+
       <View className="bg-orange-500 p-6 rounded-2xl mb-6 shadow-lg">
-        <Text className="text-white font-bold text-lg opacity-80">Faturamento Hoje</Text>
+        <Text className="text-white font-bold text-lg opacity-80">Faturamento do Dia</Text>
         <Text className="text-white font-bold text-4xl mt-1">
           R$ {totals.total.toFixed(2).replace('.', ',')}
         </Text>
@@ -125,7 +150,6 @@ export default function FinancialScreen({ navigation }: any) {
         </Text>
       </View>
 
-      {/* RESUMO POR TIPO */}
       <View className="flex-row justify-between mb-8">
         <View className="bg-zinc-800 p-3 rounded-xl flex-1 mr-2 border border-zinc-700 items-center">
           <Text className="text-zinc-400 text-xs font-bold">💵 DINHEIRO</Text>
@@ -141,7 +165,7 @@ export default function FinancialScreen({ navigation }: any) {
         </View>
       </View>
 
-      <Text className="text-white text-lg font-bold mb-4">Agenda do Dia</Text>
+      <Text className="text-white text-lg font-bold mb-4">Agenda: {formatDateForDisplay(selectedDate)}</Text>
 
       {loading ? (
         <ActivityIndicator color="#f97316" size="large" />
@@ -152,13 +176,10 @@ export default function FinancialScreen({ navigation }: any) {
           renderItem={({ item }) => (
             <View className="bg-zinc-800 p-4 rounded-xl mb-3 flex-row justify-between items-center border border-zinc-700">
               <View className="flex-1">
-                 {/* Agora mostra o NOME DO CLIENTE */}
                 <Text className="text-white font-bold text-lg">
                     {item.clienteNome ? item.clienteNome : "Cliente (sem nome)"}
                 </Text>
                 <Text className="text-zinc-400 text-sm">{item.servicoNome} • {item.horario}</Text>
-                
-                {/* Mostra qual barbeiro vai atender (útil se tiver muitos) */}
                 <Text className="text-zinc-500 text-xs mt-1">Prof: {item.barbeiroNome}</Text>
               </View>
 
@@ -167,10 +188,9 @@ export default function FinancialScreen({ navigation }: any) {
                   R$ {Number(item.preco).toFixed(2).replace('.', ',')}
                 </Text>
                 
-                {/* BOTÃO DO WHATSAPP DO CLIENTE */}
                 {item.clienteTelefone && (
                     <TouchableOpacity 
-                        onPress={() => contactClient(item.clienteTelefone, item.clienteNome)}
+                        onPress={() => contactClient(item.clienteTelefone, item.clienteNome, item.horario)}
                         className="bg-green-600 px-3 py-1 rounded-full mt-2 flex-row items-center"
                     >
                         <Text className="text-white text-xs font-bold">Chamar no Zap 💬</Text>
@@ -180,7 +200,7 @@ export default function FinancialScreen({ navigation }: any) {
             </View>
           )}
           ListEmptyComponent={() => (
-            <Text className="text-zinc-500 text-center mt-4">Nenhum agendamento hoje.</Text>
+            <Text className="text-zinc-500 text-center mt-4">Nenhum agendamento para esta data.</Text>
           )}
         />
       )}

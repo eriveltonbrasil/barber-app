@@ -11,7 +11,6 @@ export default function Booking({ route, navigation }: any) {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   
-  // NOVOS CAMPOS PARA IDENTIFICAR O CLIENTE
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
 
@@ -25,22 +24,34 @@ export default function Booking({ route, navigation }: any) {
     { id: 'cartao', label: '💳 Cartão' },
   ];
 
+  // --- CORREÇÃO DO FUSO HORÁRIO NO AGENDAMENTO ---
   const generateDates = () => {
     const dates = [];
     const today = new Date();
+    
     for (let i = 0; i < 7; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
+      
       const diaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][date.getDay()];
+      
+      // Monta a data local manualmente (YYYY-MM-DD)
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const fullDateLocal = `${year}-${month}-${day}`;
+
       const diaMes = date.getDate().toString().padStart(2, '0');
-      const mes = (date.getMonth() + 1).toString().padStart(2, '0');
+      const mesDisplay = (date.getMonth() + 1).toString().padStart(2, '0');
+      
       dates.push({
-        fullDate: date.toISOString().split('T')[0], 
-        display: `${diaSemana} ${diaMes}/${mes}`
+        fullDate: fullDateLocal, 
+        display: `${diaSemana} ${diaMes}/${mesDisplay}`
       });
     }
     return dates;
   };
+
   const dates = generateDates();
 
   useEffect(() => {
@@ -72,13 +83,11 @@ export default function Booking({ route, navigation }: any) {
     }
   }
 
-  // Função 1: Cliente avisa Barbeiro (LINK CORRIGIDO)
   const openWhatsAppToBarber = (date: string, time: string, method: string) => {
     const [ano, mes, dia] = date.split('-');
     const dataFormatada = `${dia}/${mes}`;
-    const message = `Olá *${barber.nome}*! Sou o *${clientName}* 👋\nAcabei de agendar:\n\n✂️ *${service.nome}*\n📅 ${dataFormatada} às ${time}\n💰 Pagamento: ${method.toUpperCase()}`;
+    const message = `Olá *${barber.nome}*! Sou *${clientName}* 👋\nAcabei de agendar:\n\n✂️ *${service.nome}*\n📅 ${dataFormatada} às ${time}\n💰 Pagamento: ${method.toUpperCase()}`;
     
-    // MUDANÇA: Usamos https://wa.me/?text que é mais garantido de abrir
     Linking.openURL(`https://wa.me/?text=${encodeURIComponent(message)}`);
   };
 
@@ -91,7 +100,6 @@ export default function Booking({ route, navigation }: any) {
       Alert.alert("Atenção", "Selecione a forma de pagamento!");
       return;
     }
-    // Validação dos novos campos
     if (clientName.trim() === '' || clientPhone.trim() === '') {
         Alert.alert("Atenção", "Preencha seu Nome e WhatsApp para contato!");
         return;
@@ -112,11 +120,8 @@ export default function Booking({ route, navigation }: any) {
       await addDoc(collection(db, "agendamentos"), {
         clienteId: auth.currentUser?.uid,
         clienteEmail: auth.currentUser?.email,
-        
-        // SALVANDO DADOS DO CLIENTE
         clienteNome: clientName,
         clienteTelefone: clientPhone,
-
         barbeiroId: barber.id,
         barbeiroNome: barber.nome,
         barbeiroFoto: barber.foto,
@@ -174,7 +179,6 @@ export default function Booking({ route, navigation }: any) {
                 <Text className="text-zinc-500 mt-2">Profissional: {barber.nome}</Text>
             </View>
 
-            {/* NOVOS CAMPOS DE IDENTIFICAÇÃO */}
             <Text className="text-white text-lg font-bold mb-2">Seus Dados</Text>
             <TextInput 
                 className="bg-zinc-800 text-white p-4 rounded-xl mb-3 border border-zinc-700"
