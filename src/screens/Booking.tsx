@@ -24,7 +24,6 @@ export default function Booking({ route, navigation }: any) {
     { id: 'cartao', label: '💳 Cartão' },
   ];
 
-  // --- CORREÇÃO DO FUSO HORÁRIO NO AGENDAMENTO ---
   const generateDates = () => {
     const dates = [];
     const today = new Date();
@@ -35,7 +34,6 @@ export default function Booking({ route, navigation }: any) {
       
       const diaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][date.getDay()];
       
-      // Monta a data local manualmente (YYYY-MM-DD)
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
@@ -86,6 +84,7 @@ export default function Booking({ route, navigation }: any) {
   const openWhatsAppToBarber = (date: string, time: string, method: string) => {
     const [ano, mes, dia] = date.split('-');
     const dataFormatada = `${dia}/${mes}`;
+    // Ajuste do "Sou [Nome]"
     const message = `Olá *${barber.nome}*! Sou *${clientName}* 👋\nAcabei de agendar:\n\n✂️ *${service.nome}*\n📅 ${dataFormatada} às ${time}\n💰 Pagamento: ${method.toUpperCase()}`;
     
     Linking.openURL(`https://wa.me/?text=${encodeURIComponent(message)}`);
@@ -161,6 +160,8 @@ export default function Booking({ route, navigation }: any) {
   return (
     <FlatList
       className="flex-1 bg-zinc-900 px-6 pt-12"
+      // CORREÇÃO 1: Adicionando padding (espaço interno) no final da lista
+      contentContainerStyle={{ paddingBottom: 120 }} 
       data={[]} 
       renderItem={null}
       ListHeaderComponent={
@@ -276,7 +277,8 @@ export default function Booking({ route, navigation }: any) {
             </View>
 
             <TouchableOpacity 
-                className={`p-4 rounded-xl items-center mb-10 ${(!selectedDate || !selectedTime || !paymentMethod) ? 'bg-zinc-700' : 'bg-orange-500'}`}
+                // CORREÇÃO 2: Aumentei a margem inferior para mb-20
+                className={`p-4 rounded-xl items-center mb-20 ${(!selectedDate || !selectedTime || !paymentMethod) ? 'bg-zinc-700' : 'bg-orange-500'}`}
                 onPress={handleConfirmBooking}
                 disabled={loading || !selectedDate || !selectedTime || !paymentMethod}
             >
@@ -286,6 +288,9 @@ export default function Booking({ route, navigation }: any) {
                 <Text className="text-white font-bold text-lg">Confirmar Agendamento ✅</Text>
                 )}
             </TouchableOpacity>
+
+            {/* Espaço extra para garantir rolagem em telas pequenas */}
+            <View className="h-10" />
         </>
       }
     />
