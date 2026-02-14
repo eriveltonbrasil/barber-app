@@ -1,3 +1,4 @@
+import SignUp from './src/screens/SignUp';
 import SuperAdmin from './src/screens/SuperAdmin';
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
@@ -67,6 +68,7 @@ export default function App() {
             <Stack.Screen name="AccessScreen" component={AccessScreen} />
             <Stack.Screen name="Login" component={Login} />
             <Stack.Screen name="SuperAdmin" component={SuperAdmin} />
+            <Stack.Screen name="SignUp" component={SignUp} />
           </>
         )}
       </Stack.Navigator>

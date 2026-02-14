@@ -88,7 +88,8 @@ export default function Login({ navigation }: any) {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('AccessScreen')}>
+      {/* CORREÇÃO AQUI: Agora leva para a tela SignUp */}
+      <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
         <Text className="text-zinc-500 text-center">
             Não tem conta? <Text className="text-orange-500 font-bold">Cadastre-se</Text>
         </Text>
