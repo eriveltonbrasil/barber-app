@@ -51,7 +51,7 @@ export default function Home({ navigation }: any) {
     fetchBarbers();
   }, []);
 
-  function handleLogout() {
+ function handleLogout() {
     Alert.alert("Sair", "Deseja sair da sua conta?", [
       { text: "Cancelar", style: "cancel" },
       { 
@@ -59,7 +59,14 @@ export default function Home({ navigation }: any) {
         onPress: async () => {
           try {
             await signOut(auth);
-            // Não precisa de navigation.replace, o App.tsx já cuida disso
+            
+            // --- NOVO CÓDIGO: Força a volta para o início ---
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'AccessScreen' }], 
+            });
+            // ------------------------------------------------
+
           } catch (error) {
             console.log(error);
             Alert.alert("Erro", "Não foi possível sair.");
