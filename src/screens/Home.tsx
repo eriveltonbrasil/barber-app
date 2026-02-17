@@ -58,27 +58,24 @@ function handleLogout() {
         text: "Sim, Sair", 
         onPress: async () => {
           try {
-            // 1. Tenta deslogar no Firebase
+            // 1. Manda sair
             await signOut(auth);
-          } catch (error) {
-            console.log("Erro ao deslogar Firebase:", error);
-          } finally {
-            
-            // --- AQUI ESTÁ A CORREÇÃO PARA WEB ---
+
+            // 2. TRUQUE PARA WEB: Espere um pouco e redirecione suavemente
             if (Platform.OS === 'web') {
-                // LIMPEZA NUCLEAR: Apaga a memória do navegador na marra
-                try {
-                    window.localStorage.clear(); // Apaga dados salvos
-                    window.sessionStorage.clear(); // Apaga sessão atual
-                } catch (e) {
-                    console.log("Erro ao limpar storage web:", e);
-                }
-                // Recarrega a página do zero
-                window.location.reload();
-            } else {
-                // No Android continua igual (o App.tsx gerencia)
-                // Não precisa fazer nada aqui
+                // Espera 500ms (meio segundo) para o Firebase limpar tudo
+                setTimeout(() => {
+                    // Em vez de recarregar (reload), vamos para a raiz (href)
+                    // Isso não trava o processo de logout
+                    window.location.href = "/"; 
+                }, 500);
             }
+            
+            // No Android, o App.tsx já faz o trabalho sozinho.
+
+          } catch (error) {
+            console.log("Erro ao sair:", error);
+            Alert.alert("Erro", "Não foi possível sair.");
           }
         }
       }
