@@ -1,3 +1,10 @@
+import { NativeWindStyleSheet } from "nativewind";
+// --- O TRUQUE MÁGICO PARA WEB 🌐 ---
+// Isso força o navegador a pintar as cores igual ao celular
+NativeWindStyleSheet.setOutput({
+  default: "native",
+});
+
 import SignUp from './src/screens/SignUp';
 import SuperAdmin from './src/screens/SuperAdmin';
 import React, { useState, useEffect } from 'react';
@@ -19,8 +26,7 @@ import ManageServices from './src/screens/ManageServices';
 import BarberProfile from './src/screens/BarberProfile';
 import Booking from './src/screens/Booking';
 import MyAppointments from './src/screens/MyAppointments';
-import FinancialScreen from './src/screens/FinancialScreen'; // <--- Importou aqui?
-
+import FinancialScreen from './src/screens/FinancialScreen';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
