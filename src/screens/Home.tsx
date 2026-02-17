@@ -1,11 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Image, Alert,Platform } from 'react-native';
-
-// --- CORREÇÃO AQUI: signOut vem do 'firebase/auth' ---
+import { View, Text, TouchableOpacity, FlatList, Image, Alert, Platform } from 'react-native';
 import { signOut } from 'firebase/auth'; 
-
 import { auth, db } from '../config/firebase'; 
-import { collection, getDocs, query, where } from 'firebase/firestore'; // Removido signOut daqui
+import { collection, getDocs, query, where } from 'firebase/firestore'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Home({ navigation }: any) {
@@ -51,7 +48,10 @@ export default function Home({ navigation }: any) {
     fetchBarbers();
   }, []);
 
-function handleLogout() {
+  function handleLogout() {
+    // 1. LOG DE DEPURAÇÃO (Para vermos no navegador se funcionou)
+    console.log("--- INICIANDO PROCESSO DE LOGOUT NUCLEAR ---");
+
     Alert.alert("Sair", "Deseja sair da sua conta?", [
       { text: "Cancelar", style: "cancel" },
       { 
@@ -60,8 +60,8 @@ function handleLogout() {
           
           if (Platform.OS === 'web') {
             try {
-               // 1. DÁ UM TIRO NO BANCO DE DADOS DO NAVEGADOR (IndexedDB)
-               // Isso força o Firebase a esquecer quem é você.
+               // 2. LIMPEZA PROFUNDA WEB
+               console.log("Limpando IndexedDB...");
                
                // @ts-ignore
                if (window.indexedDB && window.indexedDB.databases) {
@@ -70,28 +70,30 @@ function handleLogout() {
                    dbs.forEach((db: any) => {
                        if (db.name && db.name.includes('firebase')) {
                            window.indexedDB.deleteDatabase(db.name);
+                           console.log(`Deletado DB: ${db.name}`);
                        }
                    });
                }
                
-               // 2. Limpa cache simples
                window.localStorage.clear();
                window.sessionStorage.clear();
+               console.log("Storage limpo.");
 
             } catch (e) {
                console.log("Erro na limpeza web:", e);
             }
           }
 
-          // 3. Agora sim, pede para o Firebase sair
           try {
             await signOut(auth);
+            console.log("Firebase SignOut realizado.");
           } catch (error) {
             console.log("Erro Firebase:", error);
           }
 
-          // 4. O Golpe Final: Redireciona para a raiz    
+          // 3. REDIRECIONAMENTO FORÇADO
           if (Platform.OS === 'web') {
+              console.log("Redirecionando para raiz...");
               window.location.href = "/"; 
           }
         }
@@ -106,12 +108,16 @@ function handleLogout() {
           <Text className="text-zinc-400 text-sm">Olá, Bem-vindo</Text>
           <Text className="text-white text-3xl font-bold">{shopName}</Text>
         </View>
+        
+        {/* --- BOTÃO DE TESTE VISUAL (ROXO) --- */}
         <TouchableOpacity 
           onPress={handleLogout}
-          className="bg-zinc-800 px-4 py-2 rounded-lg border border-zinc-700"
+          className="bg-purple-600 px-4 py-2 rounded-lg border border-purple-500"
         >
-          <Text className="text-red-400 font-bold">Sair</Text>
+          <Text className="text-white font-bold">SAIR (TESTE)</Text>
         </TouchableOpacity>
+        {/* ------------------------------------ */}
+
       </View>
 
       <View className="mb-8">
