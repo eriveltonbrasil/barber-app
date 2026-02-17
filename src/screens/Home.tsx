@@ -57,30 +57,42 @@ function handleLogout() {
       { 
         text: "Sim, Sair", 
         onPress: async () => {
+          
+          if (Platform.OS === 'web') {
+            try {
+               // 1. DÁ UM TIRO NO BANCO DE DADOS DO NAVEGADOR (IndexedDB)
+               // Isso força o Firebase a esquecer quem é você.
+               
+               // @ts-ignore
+               if (window.indexedDB && window.indexedDB.databases) {
+                   // @ts-ignore
+                   const dbs = await window.indexedDB.databases();
+                   dbs.forEach((db: any) => {
+                       if (db.name && db.name.includes('firebase')) {
+                           window.indexedDB.deleteDatabase(db.name);
+                       }
+                   });
+               }
+               
+               // 2. Limpa cache simples
+               window.localStorage.clear();
+               window.sessionStorage.clear();
+
+            } catch (e) {
+               console.log("Erro na limpeza web:", e);
+            }
+          }
+
+          // 3. Agora sim, pede para o Firebase sair
           try {
             await signOut(auth);
-
-            if (Platform.OS === 'web') {
-                // 1. Limpa o LocalStorage (o básico)
-                window.localStorage.clear();
-                
-                // 2. O SEGREDRO: Deleta o banco de dados profundo do Firebase
-                // É aqui que a senha estava escondida!
-                const dbs = await window.indexedDB.databases();
-                dbs.forEach(db => { 
-                    if (db.name && db.name.includes('firebase')) {
-                        window.indexedDB.deleteDatabase(db.name);
-                    }
-                });
-
-                // 3. Recarrega a página
-                window.location.reload();
-            }
-
           } catch (error) {
-            console.log("Erro ao sair:", error);
-            // Mesmo com erro, força o reload na Web 
-            if (Platform.OS === 'web') window.location.reload();
+            console.log("Erro Firebase:", error);
+          }
+
+          // 4. O Golpe Final: Redireciona para a raiz    
+          if (Platform.OS === 'web') {
+              window.location.href = "/"; 
           }
         }
       }
