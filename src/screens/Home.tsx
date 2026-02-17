@@ -51,7 +51,7 @@ export default function Home({ navigation }: any) {
     fetchBarbers();
   }, []);
 
- function handleLogout() {
+function handleLogout() {
     Alert.alert("Sair", "Deseja sair da sua conta?", [
       { text: "Cancelar", style: "cancel" },
       { 
@@ -60,12 +60,18 @@ export default function Home({ navigation }: any) {
           try {
             await signOut(auth);
             
-            // --- NOVO CÓDIGO: Força a volta para o início ---
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'AccessScreen' }], 
-            });
-            // ------------------------------------------------
+            // ESTRATÉGIA DUPLA:
+            if (Platform.OS === 'web') {
+                // Na Web: Força um recarregamento da página (F5) para limpar tudo
+                window.location.reload();
+            } else {
+                // No Android/iPhone: Reseta a navegação para a tela 'Access'
+                // ATENÇÃO: Se der erro, troque 'Access' por 'Login'
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Access' }], 
+                });
+            }
 
           } catch (error) {
             console.log(error);
