@@ -58,27 +58,26 @@ function handleLogout() {
         text: "Sim, Sair", 
         onPress: async () => {
           
-          // 1. Tenta avisar o Firebase para deslogar
           try {
             await signOut(auth);
+            // O próprio App.tsx vai perceber que saiu e trocar a tela sozinho.
           } catch (error) {
-            console.log("Erro no Firebase (ignorado):", error);
+            console.log("Erro no Firebase:", error);
           } finally {
-            // 2. O CÓDIGO ABAIXO RODA SEMPRE, MESMO SE O FIREBASE FALHAR
             
+            // BLINDAGEM PARA WEB E ANDROID
             if (Platform.OS === 'web') {
-                // Na Web: Força o recarregamento total da página
-                window.location.reload();
+                window.location.reload(); // Web: Recarrega para limpar memória
             } else {
-                // No Android: Tenta resetar a navegação
-                // Se o App.tsx já tiver mudado a tela sozinho, ignoramos o erro
+                // Android: Tenta forçar a ida para a tela certa: 'AccessScreen'
                 try {
                     navigation.reset({
                         index: 0,
-                        routes: [{ name: 'Access' }], 
+                        routes: [{ name: 'AccessScreen' }], // <--- NOME CORRIGIDO AQUI!
                     });
-                } catch (navError) {
-                    console.log("O usuário já foi redirecionado automaticamente.");
+                } catch (e) {
+                    // Se o App.tsx já tiver mudado a tela sozinho, ignoramos o erro
+                    console.log("Navegação já realizada pelo App.tsx");
                 }
             }
           }
