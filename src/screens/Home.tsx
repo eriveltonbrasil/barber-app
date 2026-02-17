@@ -57,31 +57,22 @@ function handleLogout() {
       { 
         text: "Sim, Sair", 
         onPress: async () => {
-          
           try {
+            // 1. Apenas avisamos o Firebase que queremos sair
             await signOut(auth);
-            // O próprio App.tsx vai perceber que saiu e trocar a tela sozinho.
-          } catch (error) {
-            console.log("Erro no Firebase:", error);
-          } finally {
-            
-            // BLINDAGEM PARA WEB E ANDROID
+
+            // 2. Só na Web damos um empurrãozinho para limpar o cache visual
             if (Platform.OS === 'web') {
-                window.location.reload(); // Web: Recarrega para limpar memória
-            } else {
-                // Android: Tenta forçar a ida para a tela certa: 'AccessScreen'
-                try {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'AccessScreen' }], // <--- NOME CORRIGIDO AQUI!
-                    });
-                } catch (e) {
-                    // Se o App.tsx já tiver mudado a tela sozinho, ignoramos o erro
-                    console.log("Navegação já realizada pelo App.tsx");
-                }
+                window.location.reload();
             }
+            
+            // NO ANDROID/IPHONE: NÃO FAZEMOS NADA! 
+            // O App.tsx vai detectar que o usuário sumiu e trocará a tela sozinho.
+
+          } catch (error) {
+            console.log("Erro ao sair:", error);
+            Alert.alert("Erro", "Não foi possível sair.");
           }
-          
         }
       }
     ]);
