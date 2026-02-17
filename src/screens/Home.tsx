@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Image, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Image, Alert,Platform } from 'react-native';
 
 // --- CORREÇÃO AQUI: signOut vem do 'firebase/auth' ---
 import { signOut } from 'firebase/auth'; 
