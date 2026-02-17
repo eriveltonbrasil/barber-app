@@ -1,5 +1,10 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { initializeAuth, getReactNativePersistence, getAuth } from "firebase/auth";
+import { 
+  initializeAuth, 
+  getReactNativePersistence, 
+  browserSessionPersistence, // Adicionado para resolver o problema da Web
+  getAuth 
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
@@ -20,17 +25,23 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 let auth: any;
 
 if (Platform.OS === 'web') {
-  // Na Web, usamos o padrão (localStorage do navegador)
-  // Isso evita conflitos com o AsyncStorage do React Native
-  auth = getAuth(app);
+  // AJUSTE PARA WEB: Força a persistência apenas na sessão atual.
+  // Isso impede que o navegador restaure o login após o signOut.
+  try {
+    auth = initializeAuth(app, {
+      persistence: browserSessionPersistence
+    });
+  } catch (e) {
+    auth = getAuth(app);
+  }
 } else {
-  // No Mobile, usamos o AsyncStorage
+  // No Mobile, mantemos o AsyncStorage para permanência longa
   try {
     auth = initializeAuth(app, {
       persistence: getReactNativePersistence(ReactNativeAsyncStorage)
     });
   } catch (e) {
-    auth = getAuth(app); // Fallback caso já esteja inicializado
+    auth = getAuth(app); 
   }
 }
 
