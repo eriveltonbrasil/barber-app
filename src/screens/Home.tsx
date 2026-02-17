@@ -79,7 +79,7 @@ function handleLogout() {
 
           } catch (error) {
             console.log("Erro ao sair:", error);
-            // Mesmo com erro, força o reload na Web
+            // Mesmo com erro, força o reload na Web 
             if (Platform.OS === 'web') window.location.reload();
           }
         }
