@@ -57,26 +57,32 @@ function handleLogout() {
       { 
         text: "Sim, Sair", 
         onPress: async () => {
+          
+          // 1. Tenta avisar o Firebase para deslogar
           try {
             await signOut(auth);
+          } catch (error) {
+            console.log("Erro no Firebase (ignorado):", error);
+          } finally {
+            // 2. O CÓDIGO ABAIXO RODA SEMPRE, MESMO SE O FIREBASE FALHAR
             
-            // ESTRATÉGIA DUPLA:
             if (Platform.OS === 'web') {
-                // Na Web: Força um recarregamento da página (F5) para limpar tudo
+                // Na Web: Força o recarregamento total da página
                 window.location.reload();
             } else {
-                // No Android/iPhone: Reseta a navegação para a tela 'Access'
-                // ATENÇÃO: Se der erro, troque 'Access' por 'Login'
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Access' }], 
-                });
+                // No Android: Tenta resetar a navegação
+                // Se o App.tsx já tiver mudado a tela sozinho, ignoramos o erro
+                try {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Access' }], 
+                    });
+                } catch (navError) {
+                    console.log("O usuário já foi redirecionado automaticamente.");
+                }
             }
-
-          } catch (error) {
-            console.log(error);
-            Alert.alert("Erro", "Não foi possível sair.");
           }
+          
         }
       }
     ]);
