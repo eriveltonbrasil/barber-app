@@ -2,6 +2,7 @@ import { initializeApp, getApp, getApps } from "firebase/app";
 import { initializeAuth, getReactNativePersistence, getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native'; // <--- IMPORTANTE: Adicionamos isso
 
 // Suas chaves (Mantidas originais)
 const firebaseConfig = {
@@ -13,23 +14,29 @@ const firebaseConfig = {
   appId: "1:523904445224:web:7ee12a7f3531f09ca6be1d"
 };
 
-// 1. Garante que o App só é criado uma vez (Singleton)
+// 1. Singleton do App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// 2. Garante que o Auth é criado uma vez e com persistência
-// Usamos uma função imediata para definir o valor de 'auth' como const
-const auth = (() => {
+// 2. Configuração Inteligente de Auth (O SEGREDO DA CORREÇÃO) 🛠️
+let auth;
+
+if (Platform.OS === 'web') {
+  // NA WEB: Usa o padrão do navegador. 
+  // Isso permite que o 'Sair' funcione perfeitamente e limpe a sessão.
+  auth = getAuth(app);
+} else {
+  // NO ANDROID/IOS: Usa o AsyncStorage.
+  // Isso garante que o usuário continue logado mesmo fechando o app.
   try {
-    // Tenta inicializar com AsyncStorage
-    return initializeAuth(app, {
+    auth = initializeAuth(app, {
       persistence: getReactNativePersistence(ReactNativeAsyncStorage)
     });
   } catch (error) {
-    // Se der erro (porque já existe), devolve o auth existente
-    return getAuth(app);
+    // Se der erro (ex: já inicializado), pega a instância existente
+    auth = getAuth(app);
   }
-})();
+}
 
-// Exporta como constantes garantidas
+// Exporta
 export { auth };
 export const db = getFirestore(app);

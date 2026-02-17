@@ -58,16 +58,16 @@ function handleLogout() {
         text: "Sim, Sair", 
         onPress: async () => {
           try {
-            // 1. Apenas avisamos o Firebase que queremos sair
+            // 1. Desloga do Firebase
             await signOut(auth);
 
-            // 2. Só na Web damos um empurrãozinho para limpar o cache visual
+            // 2. Apenas na Web, damos um 'F5' para garantir que a tela limpe totalmente
             if (Platform.OS === 'web') {
                 window.location.reload();
             }
             
-            // NO ANDROID/IPHONE: NÃO FAZEMOS NADA! 
-            // O App.tsx vai detectar que o usuário sumiu e trocará a tela sozinho.
+            // No Android, não precisa fazer mais nada. 
+            // O App.tsx vai perceber o signOut e trocar para a tela de Login sozinho.
 
           } catch (error) {
             console.log("Erro ao sair:", error);
