@@ -95,7 +95,7 @@ export default function AccessScreen({ navigation }: any) {
         )}
       </TouchableOpacity>
       
-      <Text className="text-zinc-600 mt-8 text-xs">v1.0.5 SaaS</Text>
+      <Text className="text-zinc-600 mt-8 text-xs">v1.0.6 EriBrasil</Text>
     </View>
   );
 }
