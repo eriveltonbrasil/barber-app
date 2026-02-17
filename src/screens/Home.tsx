@@ -58,24 +58,29 @@ function handleLogout() {
         text: "Sim, Sair", 
         onPress: async () => {
           try {
-            // 1. Manda sair
             await signOut(auth);
 
-            // 2. TRUQUE PARA WEB: Espere um pouco e redirecione suavemente
             if (Platform.OS === 'web') {
-                // Espera 500ms (meio segundo) para o Firebase limpar tudo
-                setTimeout(() => {
-                    // Em vez de recarregar (reload), vamos para a raiz (href)
-                    // Isso não trava o processo de logout
-                    window.location.href = "/"; 
-                }, 500);
+                // 1. Limpa o LocalStorage (o básico)
+                window.localStorage.clear();
+                
+                // 2. O SEGREDRO: Deleta o banco de dados profundo do Firebase
+                // É aqui que a senha estava escondida!
+                const dbs = await window.indexedDB.databases();
+                dbs.forEach(db => { 
+                    if (db.name && db.name.includes('firebase')) {
+                        window.indexedDB.deleteDatabase(db.name);
+                    }
+                });
+
+                // 3. Recarrega a página
+                window.location.reload();
             }
-            
-            // No Android, o App.tsx já faz o trabalho sozinho.
 
           } catch (error) {
             console.log("Erro ao sair:", error);
-            Alert.alert("Erro", "Não foi possível sair.");
+            // Mesmo com erro, força o reload na Web
+            if (Platform.OS === 'web') window.location.reload();
           }
         }
       }
