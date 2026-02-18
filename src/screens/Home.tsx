@@ -48,57 +48,38 @@ export default function Home({ navigation }: any) {
     fetchBarbers();
   }, []);
 
-  function handleLogout() {
-    // 1. LOG DE DEPURAÇÃO (Para vermos no navegador se funcionou)
-    console.log("--- INICIANDO PROCESSO DE LOGOUT NUCLEAR ---");
+  // --- LÓGICA DE SAIR ---
+  async function performLogout() {
+      try {
+        await signOut(auth);
 
-    Alert.alert("Sair", "Deseja sair da sua conta?", [
-      { text: "Cancelar", style: "cancel" },
-      { 
-        text: "Sim, Sair", 
-        onPress: async () => {
-          
-          if (Platform.OS === 'web') {
-            try {
-               // 2. LIMPEZA PROFUNDA WEB
-               console.log("Limpando IndexedDB...");
-               
-               // @ts-ignore
-               if (window.indexedDB && window.indexedDB.databases) {
-                   // @ts-ignore
-                   const dbs = await window.indexedDB.databases();
-                   dbs.forEach((db: any) => {
-                       if (db.name && db.name.includes('firebase')) {
-                           window.indexedDB.deleteDatabase(db.name);
-                           console.log(`Deletado DB: ${db.name}`);
-                       }
-                   });
-               }
-               
-               window.localStorage.clear();
-               window.sessionStorage.clear();
-               console.log("Storage limpo.");
-
-            } catch (e) {
-               console.log("Erro na limpeza web:", e);
-            }
-          }
-
-          try {
-            await signOut(auth);
-            console.log("Firebase SignOut realizado.");
-          } catch (error) {
-            console.log("Erro Firebase:", error);
-          }
-
-          // 3. REDIRECIONAMENTO FORÇADO
-          if (Platform.OS === 'web') {
-              console.log("Redirecionando para raiz...");
-              window.location.href = "/"; 
-          }
+        if (Platform.OS === 'web') {
+            // Limpeza extra para Web
+            window.localStorage.clear();
+            window.sessionStorage.clear();
+            // Redirecionamento forçado
+            window.location.href = "/";
         }
+      } catch (error) {
+        console.log("Erro ao sair:", error);
+        alert("Não foi possível sair no momento.");
       }
-    ]);
+  }
+
+  function handleLogout() {
+    if (Platform.OS === 'web') {
+        // WEB: Usa confirmação nativa do navegador
+        const confirmou = window.confirm("Deseja realmente sair do sistema?");
+        if (confirmou) {
+            performLogout();
+        }
+    } else {
+        // MOBILE: Usa o Alert nativo do celular
+        Alert.alert("Sair", "Deseja sair da sua conta?", [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Sim, Sair", onPress: performLogout }
+        ]);
+    }
   }
 
   return (
@@ -108,16 +89,12 @@ export default function Home({ navigation }: any) {
           <Text className="text-zinc-400 text-sm">Olá, Bem-vindo</Text>
           <Text className="text-white text-3xl font-bold">{shopName}</Text>
         </View>
-        
-        {/* --- BOTÃO DE TESTE VISUAL (ROXO) --- */}
         <TouchableOpacity 
           onPress={handleLogout}
-          className="bg-purple-600 px-4 py-2 rounded-lg border border-purple-500"
+          className="bg-zinc-800 px-4 py-2 rounded-lg border border-zinc-700"
         >
-          <Text className="text-white font-bold">SAIR (TESTE)</Text>
+          <Text className="text-red-400 font-bold">Sair</Text>
         </TouchableOpacity>
-        {/* ------------------------------------ */}
-
       </View>
 
       <View className="mb-8">

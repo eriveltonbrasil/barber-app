@@ -2,7 +2,7 @@ import { initializeApp, getApp, getApps } from "firebase/app";
 import { 
   initializeAuth, 
   getReactNativePersistence, 
-  browserSessionPersistence, // Adicionado para resolver o problema da Web
+  browserSessionPersistence, // <--- IMPORTANTE: Importamos a persistência de sessão
   getAuth 
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -21,12 +21,12 @@ const firebaseConfig = {
 // Singleton do App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Auth Configurado Separadamente para Web e Mobile
 let auth: any;
 
 if (Platform.OS === 'web') {
-  // AJUSTE PARA WEB: Força a persistência apenas na sessão atual.
-  // Isso impede que o navegador restaure o login após o signOut.
+  // --- CONFIGURAÇÃO ESPECÍFICA PARA WEB ---
+  // Usamos browserSessionPersistence para que o logout limpe tudo.
+  // Se der erro ao inicializar (porque já existe), pegamos a instância atual.
   try {
     auth = initializeAuth(app, {
       persistence: browserSessionPersistence
@@ -35,7 +35,8 @@ if (Platform.OS === 'web') {
     auth = getAuth(app);
   }
 } else {
-  // No Mobile, mantemos o AsyncStorage para permanência longa
+  // --- CONFIGURAÇÃO PARA CELULAR (Android/iOS) ---
+  // Usamos AsyncStorage para manter o usuário logado mesmo fechando o app.
   try {
     auth = initializeAuth(app, {
       persistence: getReactNativePersistence(ReactNativeAsyncStorage)
