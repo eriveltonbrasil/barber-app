@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert, ActivityIndicator, Linking, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Alert, ActivityIndicator, Linking, TextInput, Platform } from 'react-native';
 import { db, auth } from '../config/firebase';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'; 
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
@@ -81,26 +81,50 @@ export default function Booking({ route, navigation }: any) {
     }
   }
 
+  // --- TRUQUE PARA ABRIR O WHATSAPP NA WEB ---
+  const forceOpenWeb = (url: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank'; // Abre em nova aba
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const openWhatsAppToBarber = (date: string, time: string, method: string) => {
     const [ano, mes, dia] = date.split('-');
     const dataFormatada = `${dia}/${mes}`;
-    // Ajuste do "Sou [Nome]"
-    const message = `Olá *${barber.nome}*! Sou *${clientName}* 👋\nAcabei de agendar:\n\n✂️ *${service.nome}*\n📅 ${dataFormatada} às ${time}\n💰 Pagamento: ${method.toUpperCase()}`;
     
-    Linking.openURL(`https://wa.me/?text=${encodeURIComponent(message)}`);
+    // FORMATANDO A MENSAGEM DO JEITO QUE VOCÊ QUER
+    const message = `Olá *${barber.nome}*! Sou *${clientName}* 👋\nAcabei de agendar:\n\n✂️ *${service.nome}*\n📅 ${dataFormatada} às ${time}\n💰 Pagamento: ${method.toUpperCase()}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+    if (Platform.OS === 'web') {
+        forceOpenWeb(url);
+    } else {
+        Linking.openURL(url);
+    }
   };
 
   async function handleConfirmBooking() {
+    // 1. Validações
     if (!selectedDate || !selectedTime) {
-      Alert.alert("Atenção", "Selecione um dia e um horário!");
+      alertOrConfirm("Atenção", "Selecione um dia e um horário!");
       return;
     }
     if (!paymentMethod) {
-      Alert.alert("Atenção", "Selecione a forma de pagamento!");
+      alertOrConfirm("Atenção", "Selecione a forma de pagamento!");
       return;
     }
-    if (clientName.trim() === '' || clientPhone.trim() === '') {
-        Alert.alert("Atenção", "Preencha seu Nome e WhatsApp para contato!");
+    if (clientName.trim() === '') {
+        alertOrConfirm("Atenção", "Por favor, preencha seu Nome!");
+        return;
+    }
+
+    // 2. Validação Telefone
+    const cleanPhone = clientPhone.replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+        alertOrConfirm("Telefone Inválido", "Por favor, digite um número de WhatsApp válido (com DDD).");
         return;
     }
 
@@ -111,7 +135,7 @@ export default function Booking({ route, navigation }: any) {
       const shopName = await AsyncStorage.getItem('@delp_shopName');
 
       if (!shopId) {
-        Alert.alert("Erro", "Loja não identificada. Faça login novamente.");
+        alertOrConfirm("Erro", "Loja não identificada. Faça login novamente.");
         setLoading(false);
         return;
       }
@@ -137,30 +161,49 @@ export default function Booking({ route, navigation }: any) {
         createdAt: new Date().toISOString()
       });
 
-      Alert.alert(
-        "Agendamento Confirmado! ✅", 
-        "Deseja enviar o comprovante para o barbeiro no WhatsApp?", 
-        [
-          { text: "Não, obrigado", onPress: () => navigation.navigate('Home') },
-          { text: "Sim, Enviar no Zap 💬", onPress: () => {
+      // 3. MENSAGEM FINAL AJUSTADA
+      if (Platform.OS === 'web') {
+          // TEXTO EXATO QUE VOCÊ PEDIU
+          const confirmText = "Agendamento Confirmado! ✅\n\nDeseja enviar o comprovante para o barbeiro no WhatsApp?\n\n[OK] = Sim, Enviar Zap\n[Cancelar] = Não, obrigado";
+          
+          if (window.confirm(confirmText)) {
               openWhatsAppToBarber(selectedDate, selectedTime, paymentMethod);
-              navigation.navigate('Home');
-            }
           }
-        ]
-      );
+          navigation.navigate('Home');
+      } else {
+          Alert.alert(
+            "Agendamento Confirmado! ✅", 
+            "Deseja enviar o comprovante para o barbeiro no WhatsApp?", 
+            [
+              { text: "Não, obrigado", onPress: () => navigation.navigate('Home') },
+              { text: "Sim, Enviar no Zap 💬", onPress: () => {
+                  openWhatsAppToBarber(selectedDate, selectedTime, paymentMethod);
+                  navigation.navigate('Home');
+                }
+              }
+            ]
+          );
+      }
+
     } catch (error) {
       console.log("Erro ao agendar:", error);
-      Alert.alert("Erro", "Não foi possível realizar o agendamento.");
+      alertOrConfirm("Erro", "Não foi possível realizar o agendamento.");
     } finally {
       setLoading(false);
     }
   }
 
+  function alertOrConfirm(title: string, msg: string) {
+      if (Platform.OS === 'web') {
+          alert(`${title}\n${msg}`);
+      } else {
+          Alert.alert(title, msg);
+      }
+  }
+
   return (
     <FlatList
       className="flex-1 bg-zinc-900 px-6 pt-12"
-      // CORREÇÃO 1: Adicionando padding (espaço interno) no final da lista
       contentContainerStyle={{ paddingBottom: 120 }} 
       data={[]} 
       renderItem={null}
@@ -277,7 +320,6 @@ export default function Booking({ route, navigation }: any) {
             </View>
 
             <TouchableOpacity 
-                // CORREÇÃO 2: Aumentei a margem inferior para mb-20
                 className={`p-4 rounded-xl items-center mb-20 ${(!selectedDate || !selectedTime || !paymentMethod) ? 'bg-zinc-700' : 'bg-orange-500'}`}
                 onPress={handleConfirmBooking}
                 disabled={loading || !selectedDate || !selectedTime || !paymentMethod}
@@ -289,7 +331,6 @@ export default function Booking({ route, navigation }: any) {
                 )}
             </TouchableOpacity>
 
-            {/* Espaço extra para garantir rolagem em telas pequenas */}
             <View className="h-10" />
         </>
       }
