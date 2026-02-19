@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { db, auth } from '../config/firebase';
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
@@ -8,6 +8,7 @@ export default function MyAppointments({ navigation }: any) {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Função auxiliar para buscar agendamentos
   async function fetchAppointments() {
     setLoading(true);
     try {
@@ -32,13 +33,10 @@ export default function MyAppointments({ navigation }: any) {
       }));
 
       // --- ORDENAÇÃO (DATA + HORA) ---
-      // Como data é "YYYY-MM-DD" e hora é "HH:MM", a comparação de string funciona perfeitamente
       list.sort((a: any, b: any) => {
-        // Primeiro compara a Data
         if (a.data !== b.data) {
             return a.data.localeCompare(b.data);
         }
-        // Se a data for igual, compara a Hora
         return a.horario.localeCompare(b.horario);
       });
 
@@ -54,22 +52,41 @@ export default function MyAppointments({ navigation }: any) {
     fetchAppointments();
   }, []);
 
-  async function handleCancel(id: string) {
-    Alert.alert(
-      "Cancelar",
-      "Deseja cancelar este agendamento?",
-      [
-        { text: "Não", style: "cancel" },
-        { 
-          text: "Sim, Cancelar", 
-          style: "destructive", 
-          onPress: async () => {
-            await deleteDoc(doc(db, "agendamentos", id));
-            fetchAppointments(); 
-          }
+  // --- FUNÇÃO DE CANCELAR CORRIGIDA (WEB & MOBILE) ---
+  async function confirmAndCancel(id: string) {
+      try {
+          await deleteDoc(doc(db, "agendamentos", id));
+          // Atualiza a lista na hora
+          setAppointments(prev => prev.filter(item => item.id !== id));
+      } catch (error) {
+          console.log("Erro ao cancelar:", error);
+          if (Platform.OS === 'web') alert("Erro ao cancelar agendamento.");
+          else Alert.alert("Erro", "Não foi possível cancelar.");
+      }
+  }
+
+  function handleCancel(id: string) {
+    if (Platform.OS === 'web') {
+        // WEB: Usa confirm nativo do navegador
+        const confirm = window.confirm("Deseja realmente cancelar este agendamento?");
+        if (confirm) {
+            confirmAndCancel(id);
         }
-      ]
-    );
+    } else {
+        // MOBILE: Usa Alert nativo
+        Alert.alert(
+          "Cancelar",
+          "Deseja cancelar este agendamento?",
+          [
+            { text: "Não", style: "cancel" },
+            { 
+              text: "Sim, Cancelar", 
+              style: "destructive", 
+              onPress: () => confirmAndCancel(id)
+            }
+          ]
+        );
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -93,6 +110,8 @@ export default function MyAppointments({ navigation }: any) {
         <FlatList
           data={appointments}
           keyExtractor={(item) => item.id}
+          // CORREÇÃO DE ESPAÇAMENTO NO FINAL DA LISTA 👇
+          contentContainerStyle={{ paddingBottom: 100 }}
           renderItem={({ item }) => (
             <View className="bg-zinc-800 p-4 rounded-xl mb-4 border border-zinc-700">
               <View className="flex-row justify-between items-start mb-2">

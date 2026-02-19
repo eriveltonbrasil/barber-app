@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../config/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -10,9 +10,18 @@ export default function AccessScreen({ navigation }: any) {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Função auxiliar para exibir alertas em Web e Mobile
+  function showAlert(title: string, message: string) {
+      if (Platform.OS === 'web') {
+          alert(`${title}\n\n${message}`);
+      } else {
+          Alert.alert(title, message);
+      }
+  }
+
   async function handleAccess() {
     if (code.trim() === '') {
-      Alert.alert("Atenção", "Digite o código da barbearia.");
+      showAlert("Atenção", "Digite o código da barbearia.");
       return;
     }
 
@@ -32,7 +41,7 @@ export default function AccessScreen({ navigation }: any) {
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        Alert.alert("Erro", "Código não encontrado.");
+        showAlert("Erro", "Código não encontrado.");
         setLoading(false);
         return;
       }
@@ -41,7 +50,7 @@ export default function AccessScreen({ navigation }: any) {
       const shopData = shopDoc.data();
 
       if (shopData.ativo === false) {
-          Alert.alert("Acesso Suspenso 🚫", "Barbearia indisponível.");
+          showAlert("Acesso Suspenso 🚫", "Barbearia indisponível.");
           setLoading(false);
           return;
       }
@@ -57,7 +66,7 @@ export default function AccessScreen({ navigation }: any) {
 
     } catch (error) {
       console.log(error);
-      Alert.alert("Erro", "Falha ao verificar código.");
+      showAlert("Erro", "Falha ao verificar código.");
     } finally {
       setLoading(false);
     }

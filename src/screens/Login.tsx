@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,12 +9,20 @@ export default function Login({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // NOVO: Estado para controlar se mostra ou esconde a senha
   const [showPassword, setShowPassword] = useState(false);
+
+  // Função auxiliar para exibir alertas em Web e Mobile
+  function showAlert(title: string, message: string) {
+      if (Platform.OS === 'web') {
+          alert(`${title}\n\n${message}`);
+      } else {
+          Alert.alert(title, message);
+      }
+  }
 
   async function handleLogin() {
     if (email === '' || password === '') {
-      Alert.alert("Atenção", "Preencha email e senha");
+      showAlert("Atenção", "Preencha email e senha");
       return;
     }
 
@@ -26,11 +34,16 @@ export default function Login({ navigation }: any) {
     } catch (error: any) {
       console.log(error);
       let msg = "Não foi possível entrar.";
+      
+      // Traduzindo erros comuns do Firebase
       if (error.code === 'auth/invalid-email') msg = "Email inválido.";
       if (error.code === 'auth/user-not-found') msg = "Usuário não encontrado.";
       if (error.code === 'auth/wrong-password') msg = "Senha incorreta.";
-      Alert.alert("Erro", msg);
-      setLoading(false); // Só para o loading se der erro
+      if (error.code === 'auth/invalid-credential') msg = "Credenciais inválidas (Email ou Senha).";
+      if (error.code === 'auth/too-many-requests') msg = "Muitas tentativas. Tente mais tarde.";
+
+      showAlert("Erro", msg);
+      setLoading(false); 
     }
   }
 
@@ -62,7 +75,7 @@ export default function Login({ navigation }: any) {
           className="flex-1 text-white p-4" 
           placeholder="Senha"
           placeholderTextColor="#71717a"
-          secureTextEntry={!showPassword} // <--- A MÁGICA ACONTECE AQUI
+          secureTextEntry={!showPassword} 
           value={password}
           onChangeText={setPassword}
         />
@@ -88,7 +101,6 @@ export default function Login({ navigation }: any) {
         )}
       </TouchableOpacity>
 
-      {/* CORREÇÃO AQUI: Agora leva para a tela SignUp */}
       <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
         <Text className="text-zinc-500 text-center">
             Não tem conta? <Text className="text-orange-500 font-bold">Cadastre-se</Text>

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Image, TouchableOpacity, FlatList, ActivityIndicator, Alert, Platform } from 'react-native';
 import { db } from '../config/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore'; // <--- Import SaaS
-import AsyncStorage from '@react-native-async-storage/async-storage'; // <--- Import SaaS
+import { collection, getDocs, query, where } from 'firebase/firestore'; 
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 export default function BarberProfile({ route, navigation }: any) {
   const { barber } = route.params; 
@@ -10,13 +10,17 @@ export default function BarberProfile({ route, navigation }: any) {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Estado para guardar qual serviço o usuário clicou
   const [selectedService, setSelectedService] = useState<any>(null);
+
+  // Função auxiliar para alertas Web/Mobile
+  function showAlert(title: string, msg: string) {
+      if (Platform.OS === 'web') alert(`${title}\n${msg}`);
+      else Alert.alert(title, msg);
+  }
 
   useEffect(() => {
     async function fetchServices() {
       try {
-        // 1. SaaS: Busca o ID da barbearia na memória
         const shopId = await AsyncStorage.getItem('@delp_shopId');
 
         if (!shopId) {
@@ -25,7 +29,6 @@ export default function BarberProfile({ route, navigation }: any) {
             return;
         }
 
-        // 2. SaaS: Filtra apenas serviços desta loja
         const q = query(collection(db, "servicos"), where("shopId", "==", shopId));
         const querySnapshot = await getDocs(q);
         
@@ -45,7 +48,7 @@ export default function BarberProfile({ route, navigation }: any) {
 
   function handleBooking() {
     if (!selectedService) {
-      Alert.alert("Ops!", "Selecione um serviço para continuar.");
+      showAlert("Ops!", "Selecione um serviço para continuar.");
       return;
     }
     
@@ -77,6 +80,9 @@ export default function BarberProfile({ route, navigation }: any) {
           data={services}
           keyExtractor={(item) => item.id}
           className="px-6"
+          // --- CORREÇÃO DE ESPAÇAMENTO ---
+          // Adiciona 120px de espaço no final da lista para o botão não cobrir o último item
+          contentContainerStyle={{ paddingBottom: 120 }}
           renderItem={({ item }) => {
             const isSelected = selectedService?.id === item.id;
             
@@ -105,11 +111,12 @@ export default function BarberProfile({ route, navigation }: any) {
         />
       )}
       
+      {/* Botão flutuante só aparece se tiver serviço selecionado */}
       {selectedService && (
-        <View className="p-6 absolute bottom-0 w-full bg-zinc-900/90">
+        <View className="p-6 absolute bottom-0 w-full bg-zinc-900/95 border-t border-zinc-800">
           <TouchableOpacity 
             onPress={handleBooking}
-            className="bg-orange-500 p-4 rounded-xl items-center"
+            className="bg-orange-500 p-4 rounded-xl items-center shadow-lg"
           >
             <Text className="text-white font-bold text-lg">Escolher Horário ➝</Text>
           </TouchableOpacity>
