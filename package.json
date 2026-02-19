@@ -16,6 +16,7 @@
     "autoprefixer": "^10.4.24",
     "expo": "~54.0.33",
     "expo-status-bar": "~3.0.9",
+    "expo-updates": "~29.0.16",
     "firebase": "^12.9.0",
     "nativewind": "^2.0.11",
     "postcss": "^8.5.6",
